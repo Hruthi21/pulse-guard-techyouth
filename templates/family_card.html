@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>Family Health Card - PulseGuard AI</title>
+  <link rel="stylesheet" href="/static/pulseguard.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: var(--bg); }
+    .card { max-width: 500px; width: 100%; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2><i class="fas fa-heartbeat" style="color:var(--primary)"></i> PulseGuard Family Card</h2>
+    <p style="color: var(--muted);">Health Summary for <b>{{ user.full_name }}</b></p>
+    
+    <div style="margin: 30px 0; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 12px;">
+      {% if latest %}
+        <div style="font-size: 48px; font-weight: 700; color: {% if latest.is_abnormal %}var(--danger){% else %}var(--primary){% endif %};">{{ latest.bpm | round }} BPM</div>
+        <div style="font-size: 14px; color: var(--muted); margin-top: 10px;">Last measured: {{ latest.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
+      {% else %}
+        <div>No recent measurements.</div>
+      {% endif %}
+    </div>
+
+    <div style="text-align: left; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px;">
+      <div style="font-weight: 600; margin-bottom: 10px;">Authorized Relative Contact</div>
+      <div style="font-size: 14px;"><i class="fas fa-user"></i> {{ user.relative_name }} ({{ user.relative_relation }})</div>
+      <div style="font-size: 14px; margin-top: 5px;"><i class="fas fa-phone"></i> {{ user.relative_phone }}</div>
+    </div>
+  </div>
+</body>
+</html>

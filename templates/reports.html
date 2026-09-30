@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Health History & Telemetry Reports — PulseGuard AI</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="/static/pulseguard.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* ── Reports Custom Modern Styling ──────────────────────────────── */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .kpi-card {
+      background: var(--card-bg, #0d0f17);
+      border: 1px solid var(--card-border, rgba(255, 255, 255, 0.08));
+      border-radius: 14px;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.3);
+    }
+    .kpi-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .report-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 22px;
+      margin-top: 22px;
+    }
+    @media (max-width: 992px) {
+      .report-grid { grid-template-columns: 1fr; }
+    }
+
+    .table-container {
+      overflow-x: auto;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--card-border, rgba(255, 255, 255, 0.06));
+    }
+    .styled-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13.5px;
+    }
+    .styled-table th {
+      background: rgba(255, 255, 255, 0.04);
+      padding: 14px 16px;
+      color: var(--muted, #888);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 700;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .styled-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--text, #fff);
+    }
+    .styled-table tr:hover td {
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .bpm-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 800;
+      font-size: 15px;
+    }
+    .bpm-badge.abnormal { color: #e74c3c; }
+    .bpm-badge.normal { color: #2ecc71; }
+
+    .quality-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .q-Good { background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.3); }
+    .q-Fair { background: rgba(243, 156, 18, 0.15); color: #f39c12; border: 1px solid rgba(243, 156, 18, 0.3); }
+    .q-Poor { background: rgba(231, 76, 60, 0.15); color: #e74c3c; border: 1px solid rgba(231, 76, 60, 0.3); }
+
+    .status-chip {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .status-chip.flagged { background: rgba(231, 76, 60, 0.15); color: #e74c3c; border: 1px solid rgba(231, 76, 60, 0.3); }
+    .status-chip.normal { background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.3); }
+
+    .report-card-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      transition: all 0.2s;
+    }
+    .report-card-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .chart-card {
+      background: var(--card-bg, #0d0f17);
+      border: 1px solid var(--card-border, rgba(255, 255, 255, 0.08));
+      border-radius: 16px;
+      padding: 22px;
+      margin-bottom: 22px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── PulseGuard Sidebar ────────────────────────────────────────────── -->
+  <aside class="pg-sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <i class="fas fa-heartbeat logo-icon"></i>
+      <span class="logo-text">PulseGuard AI</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+      <a href="/dashboard" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+      <a href="/heartrate" class="nav-item"><i class="fas fa-heartbeat"></i><span>Heart Rate (PPG)</span></a>
+      <a href="/appointments" class="nav-item" style="color:#2ecc71;font-weight:600;"><i class="fas fa-video"></i><span>Doctor Video Call</span></a>
+      <a href="/doctor" class="nav-item" style="color:#3498db;font-weight:600;"><i class="fas fa-user-md"></i><span>Doctor Portal</span></a>
+      <a href="/reports" class="nav-item active"><i class="fas fa-file-medical"></i><span>Reports & Family</span></a>
+      <a href="/chat" class="nav-item"><i class="fas fa-robot"></i><span>AI Assistant</span></a>
+      <a href="/lifestyle" class="nav-item"><i class="fas fa-running"></i><span>Lifestyle</span></a>
+      <a href="/diet" class="nav-item"><i class="fas fa-apple-alt"></i><span>Diet Analysis</span></a>
+      <a href="/emergency" class="nav-item"><i class="fas fa-ambulance"></i><span>Emergency</span></a>
+      {% if current_user.is_authenticated %}
+      <a href="/logout" class="nav-item" style="color:#e74c3c; margin-top:14px;"><i class="fas fa-sign-out-alt"></i><span>Logout ({{ current_user.full_name.split()[0] }})</span></a>
+      {% endif %}
+    </nav>
+    <a href="/emergency" class="sidebar-sos"><i class="fas fa-exclamation-triangle"></i><span>SOS Emergency</span></a>
+  </aside>
+
+  <!-- ── Main Content Area ─────────────────────────────────────────────── -->
+  <main class="pg-main">
+    <header class="pg-header">
+      <div>
+        <h1 style="display:flex; align-items:center; gap:10px;">
+          <i class="fas fa-file-medical" style="color:#3498db;"></i> Health History & Telemetry Reports
+        </h1>
+        <div class="header-sub">
+          Longitudinal PPG heart rate records, clinical summary reports, and family monitoring card
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <a href="/family/{{ current_user.id }}" target="_blank" class="action-btn" style="background:#2ecc71; color:#fff; text-decoration:none; padding:9px 16px; border-radius:8px; font-weight:700; font-size:13px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 14px rgba(46,204,113,0.3);">
+          <i class="fas fa-share-alt"></i> Open Family Card
+        </a>
+        <button onclick="emailRelative()" class="action-btn" style="background:#3498db; color:#fff; border:none; padding:9px 16px; border-radius:8px; font-weight:700; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 14px rgba(52,152,219,0.3);">
+          <i class="fas fa-envelope"></i> Email Link to Relative
+        </button>
+        <button onclick="generateManualReport()" class="action-btn" style="background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.15); padding:9px 16px; border-radius:8px; font-weight:700; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+          <i class="fas fa-plus"></i> Generate Report
+        </button>
+      </div>
+    </header>
+
+    <div class="pg-content">
+
+      <!-- ── KPI Summary Cards ─────────────────────────────────────────── -->
+      {% set total_measurements = measurements | length %}
+      {% if total_measurements > 0 %}
+        {% set bpms = measurements | map(attribute='bpm') | list %}
+        {% set avg_bpm = (bpms | sum / total_measurements) | round(1) %}
+        {% set max_bpm = (bpms | max) | round %}
+        {% set min_bpm = (bpms | min) | round %}
+      {% else %}
+        {% set avg_bpm = '--' %}
+        {% set max_bpm = '--' %}
+        {% set min_bpm = '--' %}
+      {% endif %}
+
+      <div class="kpi-row fade-in">
+        <div class="kpi-card" style="border-left: 4px solid #3498db;">
+          <div class="kpi-icon" style="background:rgba(52,152,219,0.15); color:#3498db;">
+            <i class="fas fa-heartbeat"></i>
+          </div>
+          <div>
+            <div style="font-size:12px; color:var(--muted);">Average Heart Rate</div>
+            <div style="font-size:22px; font-weight:800; color:var(--text);">
+              {{ avg_bpm }} <span style="font-size:13px; font-weight:normal; color:var(--muted);">BPM</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi-card" style="border-left: 4px solid #e74c3c;">
+          <div class="kpi-icon" style="background:rgba(231,76,60,0.15); color:#e74c3c;">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <div>
+            <div style="font-size:12px; color:var(--muted);">Peak Detected BPM</div>
+            <div style="font-size:22px; font-weight:800; color:#e74c3c;">
+              {{ max_bpm }} <span style="font-size:13px; font-weight:normal; color:var(--muted);">BPM</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi-card" style="border-left: 4px solid #2ecc71;">
+          <div class="kpi-icon" style="background:rgba(46,204,113,0.15); color:#2ecc71;">
+            <i class="fas fa-clipboard-check"></i>
+          </div>
+          <div>
+            <div style="font-size:12px; color:var(--muted);">Total Screenings</div>
+            <div style="font-size:22px; font-weight:800; color:var(--text);">{{ total_measurements }}</div>
+          </div>
+        </div>
+
+        <div class="kpi-card" style="border-left: 4px solid #f39c12;">
+          <div class="kpi-icon" style="background:rgba(243,156,18,0.15); color:#f39c12;">
+            <i class="fas fa-user-shield"></i>
+          </div>
+          <div>
+            <div style="font-size:12px; color:var(--muted);">Designated Relative</div>
+            <div style="font-size:14px; font-weight:700; color:var(--text);">
+              {{ current_user.relative_name or "Not Configured" }}
+            </div>
+            <div style="font-size:11px; color:#2ecc71;"><i class="fas fa-check-circle"></i> Monitoring Active</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Interactive Heart Rate Trend Chart ────────────────────────── -->
+      {% if measurements %}
+      <div class="chart-card fade-in">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <div>
+            <h3 style="margin:0; font-size:17px; display:flex; align-items:center; gap:8px;">
+              <i class="fas fa-chart-area" style="color:#2ecc71;"></i> Longitudinal Heart Rate Telemetry
+            </h3>
+            <div style="font-size:12px; color:var(--muted); margin-top:4px;">
+              Continuous PPG trendline across recent screenings (Normal Range: 60 - 100 BPM)
+            </div>
+          </div>
+          <div>
+            <span style="font-size:12px; color:#2ecc71; background:rgba(46,204,113,0.1); border:1px solid rgba(46,204,113,0.3); padding:4px 10px; border-radius:12px;">
+              <i class="fas fa-circle" style="font-size:7px;"></i> Live Sync
+            </span>
+          </div>
+        </div>
+        <div style="height: 250px; width: 100%;">
+          <canvas id="telemetryChart"></canvas>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- ── Measurements Table & Reports Grid ─────────────────────────── -->
+      <div class="report-grid">
+
+        <!-- Left: Recent Measurements Table -->
+        <div class="card" style="background:var(--card-bg, #0d0f17); border:1px solid var(--card-border, rgba(255,255,255,0.08)); border-radius:16px; padding:22px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h3 style="margin:0; font-size:17px; display:flex; align-items:center; gap:8px;">
+              <i class="fas fa-wave-square" style="color:#e74c3c;"></i> Recent PPG Measurements
+            </h3>
+            <a href="/heartrate" style="font-size:12px; color:#2ecc71; text-decoration:none; font-weight:700;">
+              + New Scan
+            </a>
+          </div>
+
+          {% if measurements %}
+          <div class="table-container">
+            <table class="styled-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Heart Rate</th>
+                  <th>Quality (SQI)</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for m in measurements %}
+                <tr>
+                  <td style="color:#aaa;">
+                    <i class="far fa-clock" style="margin-right:4px;"></i>
+                    {{ m.timestamp.strftime('%Y-%m-%d %H:%M') }}
+                  </td>
+                  <td>
+                    <span class="bpm-badge {% if m.is_abnormal %}abnormal{% else %}normal{% endif %}">
+                      <i class="fas fa-heartbeat"></i> {{ m.bpm | round }} <span style="font-size:11px; font-weight:normal; opacity:0.8;">BPM</span>
+                    </span>
+                  </td>
+                  <td>
+                    <span class="quality-badge q-{{ m.signal_quality }}">
+                      {{ m.signal_quality }}
+                    </span>
+                  </td>
+                  <td>
+                    {% if m.is_abnormal %}
+                      <span class="status-chip flagged">
+                        <i class="fas fa-exclamation-triangle"></i> Flagged
+                      </span>
+                    {% else %}
+                      <span class="status-chip normal">
+                        <i class="fas fa-check-circle"></i> Normal
+                      </span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div style="text-align:center; padding:40px 10px; color:var(--muted);">
+            <i class="fas fa-heartbeat" style="font-size:36px; margin-bottom:10px; display:block; opacity:0.4;"></i>
+            No readings recorded yet. Take your first 25-second camera PPG scan.
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Right: Automated Reports Section -->
+        <div class="card" style="background:var(--card-bg, #0d0f17); border:1px solid var(--card-border, rgba(255,255,255,0.08)); border-radius:16px; padding:22px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h3 style="margin:0; font-size:17px; display:flex; align-items:center; gap:8px;">
+              <i class="fas fa-file-invoice" style="color:#3498db;"></i> Clinical Summaries
+            </h3>
+            <span style="font-size:12px; color:var(--muted);">Auto-Emailed</span>
+          </div>
+          
+          <p style="font-size:13px; color:var(--muted); line-height:1.5; margin:0 0 16px;">
+            Summaries are compiled periodically by PulseGuard AI and automatically emailed to <strong>{{ current_user.relative_email or "your relative" }}</strong>.
+          </p>
+
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            {% if reports %}
+              {% for r in reports %}
+              <div class="report-card-item">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <strong style="font-size:14px; color:#fff; display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-file-medical-alt" style="color:#3498db;"></i>
+                    {{ r.period }} Health Report
+                  </strong>
+                  <span style="font-size:11px; color:#888;">
+                    {{ r.generated_at.strftime('%d %b %Y') }}
+                  </span>
+                </div>
+                <div style="display:flex; gap:12px; margin-bottom:8px;">
+                  <div style="font-size:12px; color:#ccc;">
+                    Avg HR: <strong style="color:#2ecc71;">{{ r.avg_hr | round(1) }} BPM</strong>
+                  </div>
+                  <div style="font-size:12px; color:#ccc;">
+                    Abnormal Events: <strong style="color:{% if r.abnormal_count > 0 %}#e74c3c{% else %}#2ecc71{% endif %};">{{ r.abnormal_count }}</strong>
+                  </div>
+                </div>
+                <div style="font-size:12px; color:var(--muted); line-height:1.4;">
+                  {{ r.summary_text }}
+                </div>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div style="text-align:center; padding:35px 10px; color:var(--muted); background:rgba(255,255,255,0.02); border-radius:10px;">
+                <i class="fas fa-clipboard" style="font-size:32px; margin-bottom:8px; display:block; opacity:0.4;"></i>
+                No summaries compiled yet. Click "Generate Report" above to compile one right now.
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+  // ── Render Chart.js Telemetry Graph ───────────────────────────────────────
+  {% if measurements %}
+  document.addEventListener('DOMContentLoaded', function() {
+      const ctx = document.getElementById('telemetryChart');
+      if (ctx) {
+          const rawData = [
+              {% for m in measurements | reverse %}
+              {
+                  time: "{{ m.timestamp.strftime('%m-%d %H:%M') }}",
+                  bpm: {{ m.bpm | round }}
+              },
+              {% endfor %}
+          ];
+
+          const labels = rawData.map(d => d.time);
+          const values = rawData.map(d => d.bpm);
+
+          new Chart(ctx, {
+              type: 'line',
+              data: {
+                  labels: labels,
+                  datasets: [{
+                      label: 'Heart Rate (BPM)',
+                      data: values,
+                      borderColor: '#2ecc71',
+                      backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                      borderWidth: 2.5,
+                      fill: true,
+                      tension: 0.35,
+                      pointBackgroundColor: values.map(v => (v < 60 || v > 100) ? '#e74c3c' : '#2ecc71'),
+                      pointRadius: 5,
+                      pointHoverRadius: 7
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                      legend: { display: false },
+                      tooltip: {
+                          callbacks: {
+                              label: function(ctx) {
+                                  return ctx.parsed.y + ' BPM' + (ctx.parsed.y > 100 ? ' (Abnormal/Flagged)' : ' (Normal)');
+                              }
+                          }
+                      }
+                  },
+                  scales: {
+                      y: {
+                          suggestedMin: 40,
+                          suggestedMax: 150,
+                          grid: { color: 'rgba(255,255,255,0.05)' },
+                          ticks: { color: '#888' }
+                      },
+                      x: {
+                          grid: { display: false },
+                          ticks: { color: '#888' }
+                      }
+                  }
+              }
+          });
+      }
+  });
+  {% endif %}
+
+  // ── Email Relative Action ─────────────────────────────────────────────────
+  function emailRelative() {
+      if (typeof showToast === 'function') showToast("Sending live family card link...", "warning");
+      fetch('/api/health/share_card', {method: 'POST'})
+      .then(r => r.json())
+      .then(data => {
+          if(data.status === "success") {
+              alert("✅ Family Card link has been dispatched to your authorized relative!");
+          } else {
+              alert("Notice: " + (data.message || data.error));
+          }
+      })
+      .catch(e => alert("Error dispatching email."));
+  }
+
+  // ── Manual Report Generation ──────────────────────────────────────────────
+  function generateManualReport() {
+      fetch('/api/health/generate_report', {method: 'POST'})
+      .then(r => r.json())
+      .then(data => {
+          if (data.status === "success") {
+              alert("✅ " + data.message);
+              location.reload();
+          } else {
+              alert("Error: " + data.message);
+          }
+      })
+      .catch(e => alert("Error generating report: " + e));
+  }
+  </script>
+
+{% if current_user.is_authenticated %}
+<script src="/static/voice.js"></script>
+{% endif %}
+</body>
+</html>

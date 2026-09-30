@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>PulseGuard AI — Heart Rate Monitor</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<link rel="stylesheet" href="/static/pulseguard.css"/>
+<style>
+#video{display:none}
+#capture-canvas{display:none}
+#wave-canvas{width:100%;height:160px;border-radius:10px;background:#050510;display:block}
+.bpm-ring{width:180px;height:180px;border-radius:50%;border:6px solid var(--primary);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto;box-shadow:0 0 30px rgba(29,185,84,0.3);position:relative;transition:box-shadow .4s}
+.bpm-ring.pulse-anim{animation:bpm-pulse 0.5s ease-out}
+@keyframes bpm-pulse{0%{box-shadow:0 0 30px rgba(29,185,84,0.3)}50%{box-shadow:0 0 60px rgba(29,185,84,0.7)}100%{box-shadow:0 0 30px rgba(29,185,84,0.3)}}
+.bpm-num{font-size:52px;font-weight:800;color:var(--primary);line-height:1}
+.bpm-label{font-size:12px;color:var(--muted);letter-spacing:2px;margin-top:4px}
+.metric-box{background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;padding:14px 18px;text-align:center}
+.metric-val{font-size:24px;font-weight:700;color:var(--primary)}
+.metric-lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.sqi-bar{height:8px;border-radius:4px;background:#1a1a2e;overflow:hidden;margin-top:8px}
+.sqi-fill{height:100%;border-radius:4px;background:var(--primary);transition:width .5s ease}
+.status-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(29,185,84,0.15);color:var(--primary);border:1px solid rgba(29,185,84,0.3)}
+.status-badge.warning{background:rgba(243,156,18,0.15);color:#f39c12;border-color:rgba(243,156,18,0.3)}
+.status-badge.error{background:rgba(231,76,60,0.15);color:#e74c3c;border-color:rgba(231,76,60,0.3)}
+.overlay-msg{background:rgba(5,5,16,0.85);border-radius:10px;padding:16px;text-align:center;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:80%;pointer-events:none;z-index:5}
+.wave-wrap{position:relative}
+.conf-bar{height:10px;border-radius:5px;background:#1a1a2e;overflow:hidden;margin-top:6px}
+.conf-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,#f39c12,#1db954);transition:width .5s ease}
+.hrv-tag{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
+.hrv-relaxed{background:rgba(29,185,84,0.2);color:#1db954}
+.hrv-moderate{background:rgba(243,156,18,0.2);color:#f39c12}
+.hrv-stress{background:rgba(231,76,60,0.2);color:#e74c3c}
+
+/* ── Medical Report & Clinical Feedback Modal Styles ─────────────── */
+#clinicalReportModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(10px);
+  z-index: 100000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.report-modal-sheet {
+  background: #0d0f17;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  max-width: 820px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.8);
+  padding: 30px;
+  color: #fff;
+  position: relative;
+}
+
+.report-header-band {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 18px;
+  margin-bottom: 20px;
+}
+
+.report-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.report-kpi-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 14px;
+  text-align: center;
+}
+
+.report-rec-box {
+  background: rgba(255, 255, 255, 0.02);
+  border-left: 4px solid var(--primary);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 16px 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* ── Breathing Coach & Clinical Recovery Protocols ── */
+.breathing-coach-box {
+  background: radial-gradient(circle at center, rgba(46, 204, 113, 0.08) 0%, rgba(5, 5, 16, 0.5) 75%);
+  border: 1px solid rgba(46, 204, 113, 0.25);
+  border-radius: 14px;
+  padding: 20px;
+  margin: 18px 0;
+  text-align: center;
+}
+.breathing-orb-wrap {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  margin: 14px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.breathing-orb {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #2ecc71 0%, #1abc9c 70%);
+  box-shadow: 0 0 25px rgba(46, 204, 113, 0.4);
+  transition: transform 4s ease-in-out, background 0.8s, box-shadow 0.8s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 800;
+}
+.breathing-orb.inhale {
+  transform: scale(1.45);
+  box-shadow: 0 0 45px rgba(46, 204, 113, 0.8);
+  background: radial-gradient(circle, #2ecc71 0%, #27ae60 70%);
+}
+.breathing-orb.hold {
+  transform: scale(1.45);
+  box-shadow: 0 0 40px rgba(52, 152, 219, 0.8);
+  background: radial-gradient(circle, #3498db 0%, #2980b9 70%);
+}
+.breathing-orb.exhale {
+  transform: scale(0.9);
+  box-shadow: 0 0 20px rgba(46, 204, 113, 0.3);
+  background: radial-gradient(circle, #1abc9c 0%, #16a085 70%);
+}
+.protocol-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  line-height: 1.55;
+  font-size: 13px;
+  color: #ddd;
+}
+.protocol-item strong {
+  color: #fff;
+  display: block;
+  margin-bottom: 3px;
+}
+.root-cause-chip {
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid rgba(231, 76, 60, 0.25);
+  color: #ff7675;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px;
+}
+
+@media print {
+  body * { visibility: hidden; }
+  #clinicalReportModal, #clinicalReportModal * { visibility: visible; }
+  #clinicalReportModal {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: auto;
+    background: #fff !important;
+    color: #000 !important;
+    padding: 0;
+  }
+  .report-modal-sheet {
+    background: #fff !important;
+    color: #000 !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 20px;
+    max-width: 100%;
+  }
+  .modal-actions-bar { display: none !important; }
+}
+
+</style>
+</head>
+<body>
+
+<aside class="pg-sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <i class="fas fa-heartbeat logo-icon"></i>
+    <span class="logo-text">PulseGuard AI</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="/" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+    <a href="/dashboard" class="nav-item "><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+    <a href="/heartrate" class="nav-item active"><i class="fas fa-heartbeat"></i><span>Heart Rate (PPG)</span></a>
+    <a href="/appointments" class="nav-item " style="color:#2ecc71;font-weight:600;"><i class="fas fa-video"></i><span>Doctor Video Call</span></a>
+    <a href="/doctor" class="nav-item " style="color:#3498db;font-weight:600;"><i class="fas fa-user-md"></i><span>Doctor Portal</span></a>
+    <a href="/reports" class="nav-item "><i class="fas fa-file-medical"></i><span>Reports & Family</span></a>
+    <a href="/chat" class="nav-item "><i class="fas fa-robot"></i><span>AI Assistant</span></a>
+    <a href="/lifestyle" class="nav-item "><i class="fas fa-running"></i><span>Lifestyle</span></a>
+    <a href="/diet" class="nav-item "><i class="fas fa-apple-alt"></i><span>Diet Analysis</span></a>
+    <a href="/emergency" class="nav-item "><i class="fas fa-ambulance"></i><span>Emergency</span></a>
+    {% if current_user.is_authenticated %}
+    <a href="/logout" class="nav-item" style="color:#e74c3c; margin-top:14px;"><i class="fas fa-sign-out-alt"></i><span>Logout ({{ current_user.full_name.split()[0] }})</span></a>
+    {% else %}
+    <a href="/login" class="nav-item" style="color:#2ecc71; margin-top:14px;"><i class="fas fa-sign-in-alt"></i><span>Login</span></a>
+    <a href="/register" class="nav-item"><i class="fas fa-user-plus"></i><span>Register</span></a>
+    {% endif %}
+  </nav>
+  <a href="/emergency" class="sidebar-sos"><i class="fas fa-exclamation-triangle"></i><span>SOS Emergency</span></a>
+</aside>
+
+<main class="pg-main">
+  <header class="pg-header">
+    <div>
+      <h1>💓 Heart Rate Monitor</h1>
+      <div class="header-sub">Face-based rPPG — automatic heart rate estimation from your face</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="status-badge" id="sys-status"><i class="fas fa-circle" style="font-size:8px"></i> Ready</span>
+      <a href="/dashboard" style="color:var(--muted);text-decoration:none;font-size:13px"><i class="fas fa-arrow-left"></i> Dashboard</a>
+    </div>
+  </header>
+
+  <div class="pg-content">
+
+    <!-- TOP ROW -->
+    <div class="grid-4 fade-in" style="margin-bottom:24px">
+      <div class="card" style="text-align:center">
+        <div class="card-title">Heart Rate</div>
+        <div class="bpm-ring" id="bpm-ring">
+          <div class="bpm-num" id="bpm-val">--</div>
+          <div class="bpm-label">BPM</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;grid-column:span 3">
+        <div class="grid-3" style="gap:12px">
+          <div class="metric-box">
+            <div class="metric-val" id="bp-val">--/--</div>
+            <div class="metric-lbl">ESTIMATED BP</div>
+            <div id="bp-tag" class="hrv-tag hrv-moderate" style="margin-top:6px;display:inline-block">Not medical diag.</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-val" id="risk-val">--</div>
+            <div class="metric-lbl">Risk Score</div>
+            <div class="sqi-bar"><div class="sqi-fill" id="risk-fill" style="width:0%"></div></div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-val" id="conf-val">0%</div>
+            <div class="metric-lbl">Confidence</div>
+            <div class="conf-bar"><div class="conf-fill" id="conf-fill" style="width:0%"></div></div>
+          </div>
+        </div>
+        <!-- Instructions + controls -->
+        <div class="card" style="padding:16px 20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+            <div>
+              <div style="font-weight:700;margin-bottom:4px" id="instr-title">📷 Face the front camera</div>
+              <div style="font-size:12px;color:var(--muted)" id="instr-sub">Ensure good lighting · Keep face in frame · Stay still for 20s</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn-primary" id="start-btn" onclick="startCamera()"><i class="fas fa-play"></i> Start</button>
+              <button class="btn-secondary" id="stop-btn" onclick="stopCamera()" style="display:none"><i class="fas fa-stop"></i> Stop</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WAVEFORM -->
+    <div class="card fade-in" style="margin-bottom:24px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-weight:700"><i class="fas fa-video" style="color:var(--primary);margin-right:6px"></i>Live Camera Feed</div>
+        <div style="display:flex;gap:10px;font-size:12px;color:var(--muted)">
+          <span id="face-tag"><i class="fas fa-user"></i> AI Face Tracking</span>
+        </div>
+      </div>
+      <div class="wave-wrap">
+        <canvas id="wave-canvas" height="160"></canvas>
+        <div class="overlay-msg" id="overlay-msg">
+          <i class="fas fa-camera" style="font-size:28px;color:var(--primary);margin-bottom:8px;display:block"></i>
+          <div style="font-size:14px;font-weight:600">Click <b>Start</b> to activate camera</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Camera permission required</div>
+        </div>
+      </div>
+    </div>
+
+    
+    <!-- ── ON-PAGE MEDICAL FEEDBACK CARD (Appears automatically after scan) ── -->
+    <div class="card fade-in" id="onPageMedicalFeedback" style="display:none; margin-bottom:24px; border-left: 5px solid #2ecc71; background: #0c0f1a;">
+      
+      <!-- Top Alert / Classification Banner -->
+      <div id="fb-severity-banner" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.08);">
+        <div>
+          <span id="fb-status-pill" style="display:inline-block; padding:4px 12px; border-radius:14px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; background:rgba(46,204,113,0.2); color:#2ecc71; margin-bottom:6px;">
+            CLINICAL CARDIOLOGY ASSESSMENT
+          </span>
+          <h2 style="margin:2px 0 0; font-size:22px; display:flex; align-items:center; gap:8px;" id="fb-title-text">
+            <i class="fas fa-heartbeat" id="fb-title-icon" style="color:#2ecc71;"></i>
+            <span id="fb-rhythm-cat">Normal Sinus Rhythm</span>
+          </h2>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button onclick="reopenReportModal()" class="btn-primary" style="padding:8px 16px; font-size:12.5px; font-weight:700;">
+            <i class="fas fa-file-medical-alt"></i> Full Clinical Report
+          </button>
+          <a href="/appointments" class="btn-primary" style="background:#2ecc71; text-decoration:none; padding:8px 16px; font-size:12.5px; font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+            <i class="fas fa-video"></i> Consult Doctor
+          </a>
+        </div>
+      </div>
+
+      <!-- Core Hemodynamic KPI Grid -->
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap:12px; margin-bottom:20px;">
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); padding:14px; border-radius:12px; text-align:center;">
+          <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700;">Measured Heart Rate</div>
+          <div style="font-size:26px; font-weight:800; margin-top:2px;" id="fb-kpi-bpm">-- <span style="font-size:13px; color:var(--muted);">BPM</span></div>
+          <div style="font-size:11px; color:#aaa;" id="fb-kpi-source">Optical PPG</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); padding:14px; border-radius:12px; text-align:center;">
+          <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700;">Autonomic Sympathovagal Tone</div>
+          <div style="font-size:15px; font-weight:700; margin-top:8px;" id="fb-autonomic">Balanced Homeostasis</div>
+          <div style="font-size:11px; color:#aaa;">Sympathetic vs Parasympathetic</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); padding:14px; border-radius:12px; text-align:center;">
+          <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700;">Myocardial Strain</div>
+          <div style="font-size:15px; font-weight:700; margin-top:8px;" id="fb-workload">Optimal Range</div>
+          <div style="font-size:11px; color:#aaa;">Ventricular Filling & Demand</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); padding:14px; border-radius:12px; text-align:center;">
+          <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700;">Cardiovascular Risk Tier</div>
+          <div style="font-size:16px; font-weight:800; margin-top:8px;" id="fb-risk-tier">LOW RISK (10/100)</div>
+          <div style="font-size:11px; color:#aaa;">Clinical Algorithmic Score</div>
+        </div>
+      </div>
+
+      <!-- Physiological Analysis Section -->
+      <div style="margin-bottom:18px;">
+        <h4 style="margin:0 0 8px; font-size:14px; text-transform:uppercase; letter-spacing:0.5px; color:#2ecc71; display:flex; align-items:center; gap:8px;">
+          <i class="fas fa-microscope"></i> In-Depth Physiological & Hemodynamic Assessment
+        </h4>
+        <div id="fb-summary-text" style="font-size:13.5px; color:#ddd; line-height:1.65; background:rgba(255,255,255,0.02); padding:14px 16px; border-radius:10px; border:1px solid rgba(255,255,255,0.05);">
+        </div>
+      </div>
+
+      <!-- Root Causes Section -->
+      <div style="margin-bottom:18px;">
+        <h4 style="margin:0 0 8px; font-size:13.5px; text-transform:uppercase; letter-spacing:0.5px; color:#e67e22; display:flex; align-items:center; gap:8px;">
+          <i class="fas fa-question-circle"></i> Potential Contributing Factors / Etiology:
+        </h4>
+        <div id="fb-root-causes" style="display:flex; flex-wrap:wrap; gap:6px;">
+        </div>
+      </div>
+
+      <!-- Actionable Medical Protocols ("How to Overcome This") -->
+      <div style="margin-bottom:18px;">
+        <h4 style="margin:0 0 10px; font-size:14px; text-transform:uppercase; letter-spacing:0.5px; color:#3498db; display:flex; align-items:center; gap:8px;">
+          <i class="fas fa-heart-pulse"></i> Clinical Action Plan: How to Safely Stabilize & Overcome This
+        </h4>
+        <div id="fb-protocols-container">
+        </div>
+      </div>
+
+      <!-- Interactive 4-7-8 Breathing Coach Widget -->
+      <div class="breathing-coach-box" id="fb-breathing-coach">
+        <div style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:#2ecc71; font-weight:800; margin-bottom:4px;">
+          <i class="fas fa-wind"></i> Guided Vagal Nerve Activation
+        </div>
+        <h3 style="margin:0 0 6px; font-size:18px;">4-7-8 Parasympathetic Breathing Pacer</h3>
+        <p style="font-size:12.5px; color:var(--muted); max-width:540px; margin:0 auto 14px;">
+          Slow diaphragmatic breathing stimulates the vagus nerve brake, releasing acetylcholine to rapidly slow sinoatrial nodal firing and lower tachycardia.
+        </p>
+
+        <div class="breathing-orb-wrap">
+          <div class="breathing-orb" id="breathing-orb">
+            <span id="breathing-phase-text" style="font-size:13px; text-transform:uppercase;">Ready</span>
+            <span id="breathing-sec-text" style="font-size:22px; font-weight:900;">--</span>
+          </div>
+        </div>
+
+        <div id="breathing-instruction-sub" style="font-size:13px; color:#eee; font-weight:600; margin-bottom:12px;">
+          Click "Start Breathing Exercise" to begin 3 guided calming cycles.
+        </div>
+
+        <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+          <button class="btn-primary" id="btn-start-breathing" onclick="toggleBreathingExercise()" style="padding:9px 20px; font-size:13px; font-weight:700;">
+            <i class="fas fa-play"></i> Start 4-7-8 Breathing
+          </button>
+          <button class="btn-secondary" id="btn-reset-breathing" onclick="resetBreathingExercise()" style="padding:9px 16px; font-size:13px;">
+            <i class="fas fa-redo"></i> Reset
+          </button>
+        </div>
+      </div>
+
+      <!-- Red-Flag Emergency Precaution Card -->
+      <div id="fb-red-flags-box" style="background:rgba(231,76,60,0.12); border:1px solid rgba(231,76,60,0.35); padding:14px 18px; border-radius:10px; margin-bottom:18px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+          <div>
+            <div style="font-weight:800; font-size:13.5px; color:#ff6b6b; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+              <i class="fas fa-shield-alt"></i> Red-Flag Cardiac Warning Indicators:
+            </div>
+            <div style="font-size:12.5px; color:#ffb8b8; line-height:1.5;" id="fb-red-flags-text">
+              If accompanied by chest pressure, radiating arm or jaw pain, acute shortness of breath (dyspnea), dizziness, or presyncope, do not wait. Dial 112 or activate Emergency SOS immediately.
+            </div>
+          </div>
+          <a href="/emergency" style="background:#e74c3c; color:#fff; text-decoration:none; padding:8px 14px; border-radius:6px; font-size:12px; font-weight:800; display:inline-flex; align-items:center; gap:6px; white-space:nowrap;">
+            <i class="fas fa-ambulance"></i> Open Emergency SOS
+          </a>
+        </div>
+      </div>
+
+      <!-- Bottom Actions Bar -->
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.08);">
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <a href="/appointments" class="btn-primary" style="background:#2ecc71; text-decoration:none; padding:10px 18px; font-size:13px; font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+            <i class="fas fa-video"></i> Video Consult with Dr. Jayanth Gowda
+          </a>
+          <button onclick="reopenReportModal()" style="background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.15); padding:10px 16px; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+            <i class="fas fa-print"></i> Print / Save Report PDF
+          </button>
+          <button onclick="emailReportToRelative()" style="background:#3498db; color:#fff; border:none; padding:10px 16px; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+            <i class="fas fa-envelope"></i> Email Link to Relative
+          </button>
+        </div>
+        <div style="font-size:11px; color:#888;">
+          Automated Telecardiology Triage &bull; PulseGuard AI
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FINGER PPG ROW -->
+    <div class="card fade-in" style="margin-bottom:24px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-weight:700"><i class="fas fa-hand-point-up" style="color:var(--primary);margin-right:6px"></i>Finger PPG Monitor</div>
+      </div>
+      <div class="grid-2" style="gap:16px;">
+        <div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Place your index finger completely covering the rear camera lens (and flashlight if available) on your phone, or your webcam. Stay still and wait for the signal to stabilize.</p>
+          <div style="display:flex;gap:8px;margin-bottom:14px">
+            <button class="btn-primary" id="start-finger-btn" onclick="startFingerPPG()"><i class="fas fa-play"></i> Start Finger PPG</button>
+            <button class="btn-secondary" id="stop-finger-btn" onclick="stopFingerPPG()" style="display:none"><i class="fas fa-stop"></i> Stop</button>
+          </div>
+          <div class="metric-box" style="width:140px">
+            <div class="metric-val" id="finger-bpm-val">--</div>
+            <div class="metric-lbl">FINGER BPM</div>
+          </div>
+        </div>
+        <div>
+          <div style="position:relative;width:100%;height:140px;background:#050510;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,0.05)">
+            <canvas id="finger-wave-canvas" style="width:100%;height:100%;display:block"></canvas>
+            <div id="finger-status-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(5,5,16,0.8);font-size:13px;font-weight:600">
+               Click Start to begin
+            </div>
+          </div>
+        </div>
+      </div>
+      <video id="finger-video" style="display:none" playsinline></video>
+      <canvas id="finger-process-canvas" style="display:none"></canvas>
+    </div>
+
+    <!-- INTEGRATION ROW -->
+    <div class="grid-2 fade-in">
+      <div class="card">
+        <div class="section-title"><i class="fas fa-shield-heart"></i> Risk Score Integration</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Send current heart rate to the risk scoring engine for a complete cardiovascular assessment.</p>
+        <div id="risk-result" style="display:none;margin-bottom:12px"></div>
+        <button class="btn-primary" id="risk-btn" onclick="sendToRisk()" disabled><i class="fas fa-chart-bar"></i> Update Risk Score</button>
+      </div>
+      <div class="card">
+        <div class="section-title"><i class="fas fa-ambulance"></i> Emergency Detection</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Abnormal heart rate will auto-flag for emergency. Manual check also available.</p>
+        <div id="emg-result" style="display:none;margin-bottom:12px"></div>
+        <button class="btn-primary" id="emg-btn" onclick="checkEmergency()" disabled style="background:linear-gradient(135deg,#c0392b,#e74c3c)"><i class="fas fa-exclamation-triangle"></i> Emergency Check</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Comprehensive Clinical Screening Report Modal ──────────────── -->
+  <div id="clinicalReportModal">
+    <div class="report-modal-sheet">
+      <!-- Header -->
+      <div class="report-header-band">
+        <div>
+          <div style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:#2ecc71; font-weight:800;">
+            PulseGuard AI &bull; Clinical Telecardiology
+          </div>
+          <h2 style="margin:4px 0 2px; font-size:22px;">Photoplethysmography (PPG) Screening Report</h2>
+          <div style="font-size:12px; color:var(--muted);">Automated Hemodynamic & Autonomic Assessment</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:12px; color:#888;">Date: <strong style="color:#fff;" id="modal-report-date">--</strong></div>
+          <div style="font-size:12px; color:#888;">Patient: <strong style="color:#fff;">{{ current_user.full_name }}</strong></div>
+          <div style="font-size:11px; color:#888;">ID: PG-{{ current_user.id }} &bull; Source: <span id="modal-report-source">Camera PPG</span></div>
+        </div>
+      </div>
+
+      <!-- Core Metrics Row -->
+      <div class="report-kpi-grid">
+        <div class="report-kpi-box">
+          <div style="font-size:11px; color:var(--muted); text-transform:uppercase;">Heart Rate</div>
+          <div style="font-size:24px; font-weight:800;" id="modal-bpm-val">-- <span style="font-size:12px;">BPM</span></div>
+          <div style="font-size:11px;" id="modal-rhythm-badge">--</div>
+        </div>
+        <div class="report-kpi-box">
+          <div style="font-size:11px; color:var(--muted); text-transform:uppercase;">Signal Quality (SQI)</div>
+          <div style="font-size:20px; font-weight:800; color:#2ecc71;" id="modal-sqi-val">Good</div>
+          <div style="font-size:11px; color:#888;">Photometric Variance</div>
+        </div>
+        <div class="report-kpi-box">
+          <div style="font-size:11px; color:var(--muted); text-transform:uppercase;">Autonomic State</div>
+          <div style="font-size:15px; font-weight:700; margin-top:4px;" id="modal-autonomic-val">Balanced</div>
+          <div style="font-size:11px; color:#888;">Sympathovagal Ratio</div>
+        </div>
+        <div class="report-kpi-box">
+          <div style="font-size:11px; color:var(--muted); text-transform:uppercase;">Cardiac Workload</div>
+          <div style="font-size:15px; font-weight:700; margin-top:4px;" id="modal-workload-val">Normal</div>
+          <div style="font-size:11px; color:#888;">Myocardial O2 Demand</div>
+        </div>
+      </div>
+
+      <!-- Clinical Findings -->
+      <div style="margin: 18px 0;">
+        <h4 style="margin:0 0 8px; font-size:14px; text-transform:uppercase; letter-spacing:0.5px; color:#2ecc71;">
+          <i class="fas fa-stethoscope"></i> Clinical Interpretation & Physiological Assessment
+        </h4>
+        <div id="modal-clinical-summary" style="font-size:13.5px; color:#ddd; line-height:1.6; background:rgba(255,255,255,0.03); padding:14px; border-radius:10px; border:1px solid rgba(255,255,255,0.05);">
+        </div>
+      </div>
+
+      <!-- Contributing Factors / Etiology in Modal -->
+      <div style="margin: 16px 0;">
+        <h4 style="margin:0 0 8px; font-size:13.5px; text-transform:uppercase; letter-spacing:0.5px; color:#e67e22;">
+          <i class="fas fa-question-circle"></i> Potential Contributing Factors / Root Causes:
+        </h4>
+        <div id="modal-root-causes" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+      </div>
+
+      <!-- Actionable Medical Recommendations -->
+      <div class="report-rec-box" id="modal-rec-box">
+        <h4 style="margin:0 0 6px; font-size:13.5px; color:#fff;">
+          <i class="fas fa-check-circle" style="color:#2ecc71;"></i> Actionable Medical Protocols & Stabilizing Interventions:
+        </h4>
+        <div id="modal-protocols-list" style="margin-top:10px;"></div>
+      </div>
+
+      <!-- Doctor Referral Notice -->
+      <div style="background:rgba(52,152,219,0.1); border:1px solid rgba(52,152,219,0.3); padding:12px 16px; border-radius:8px; font-size:12px; color:#3498db; margin-bottom:16px;">
+        <strong>👨‍⚕️ Attending Physician Referral:</strong> Dr. Jayanth Gowda &bull; Senior Cardiologist &bull; Available for immediate direct telecardiology consultation.
+      </div>
+
+      <!-- Red Flag Warning -->
+      <div style="background:rgba(231,76,60,0.1); border:1px solid rgba(231,76,60,0.3); padding:12px 16px; border-radius:8px; font-size:12px; color:#e74c3c; line-height:1.5; margin-bottom:20px;">
+        <strong>⚠️ Clinical Precaution:</strong> This automated analysis is generated from optical photoplethysmography and AI signal processing for cardiovascular screening. It is not an alternative to an in-person 12-lead ECG. If experiencing chest pain, pressure, lightheadedness, or shortness of breath, dial 112 immediately.
+      </div>
+
+      <!-- Modal Action Buttons Bar -->
+      <div class="modal-actions-bar" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-top:1px solid rgba(255,255,255,0.08); padding-top:16px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <a href="/appointments" class="btn-primary" style="background:#2ecc71; color:#fff; text-decoration:none; padding:10px 18px; border-radius:8px; font-weight:700; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
+            <i class="fas fa-video"></i> Consult Cardiologist Now
+          </a>
+          <button onclick="window.print()" style="background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.15); padding:10px 16px; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+            <i class="fas fa-print"></i> Print / PDF Report
+          </button>
+          <button onclick="emailReportToRelative()" style="background:#3498db; color:#fff; border:none; padding:10px 16px; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+            <i class="fas fa-envelope"></i> Email to Relative
+          </button>
+        </div>
+        <button onclick="closeClinicalReport()" style="background:transparent; color:#888; border:1px solid #444; padding:8px 16px; border-radius:8px; font-size:13px; cursor:pointer;">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div class="pg-toast" id="pg-toast"></div>
+<video id="video" autoplay playsinline></video>
+<canvas id="capture-canvas"></canvas>
+
+<script src="/static/ppg_engine.js"></script>
+<script>
+// ── globals ─────────────────────────────────────────────────────────────────
+let stream     = null;
+let running    = false;
+let mediaRecorder = null;
+let recordedChunks = [];
+let recordingTimer = null;
+let lastResult = null;
+
+// ── DOM refs ─────────────────────────────────────────────────────────────────
+const video   = document.getElementById('video');
+const wavCvs  = document.getElementById('wave-canvas');
+
+// ── camera start ─────────────────────────────────────────────────────────────
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: {ideal: 640}, height: {ideal: 480}, frameRate: {ideal: 30} }
+    });
+    video.srcObject = stream;
+    await video.play();
+
+    running = true;
+    document.getElementById('start-btn').style.display = 'none';
+    document.getElementById('stop-btn').style.display  = '';
+    document.getElementById('overlay-msg').style.display = 'none';
+    
+    // Switch preview to show the face
+    video.style.display = 'block';
+    video.style.width = '100%';
+    video.style.borderRadius = '10px';
+    document.getElementById('wave-canvas').style.display = 'none';
+    
+    setInstruction('🎥 Recording face...', 'Please stay still for 20 seconds', 'warning');
+    updateStatus('Recording...', 'warning');
+    
+    // Start recording
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+    
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) recordedChunks.push(e.data);
+    };
+    
+    mediaRecorder.onstop = async () => {
+        setInstruction('⏳ Analyzing...', 'Processing video with VitalLens AI', 'warning');
+        updateStatus('Analyzing...', 'warning');
+        
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const formData = new FormData();
+        formData.append('video', blob, 'face_video.webm');
+        
+        try {
+            const res = await fetch('/api/hr/from_face', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            
+            if (data.error) {
+                showToast(data.error, 'error');
+                updateStatus('Analysis Failed', 'error');
+            } else {
+                showToast('Analysis complete', 'success');
+                lastResult = data;
+                updateMetricsFromAPI(data);
+                if (data.bpm) showClinicalMedicalReport(Math.round(data.bpm), 'Face rPPG', 'Good', data.estimated_bp, data.risk_score);
+            }
+        } catch(err) {
+            showToast('API request failed', 'error');
+            updateStatus('Error', 'error');
+        }
+        
+        stopCameraUI();
+    };
+    
+    mediaRecorder.start();
+    
+    // Stop recording after 20 seconds
+    let timeLeft = 20;
+    document.getElementById('bpm-val').textContent = timeLeft;
+    document.getElementById('instr-title').innerHTML = `⏱️ Recording... ${timeLeft}s left`;
+    
+    recordingTimer = setInterval(() => {
+        timeLeft--;
+        if (timeLeft <= 0) {
+            clearInterval(recordingTimer);
+            if (mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+            }
+        } else {
+            document.getElementById('bpm-val').textContent = timeLeft;
+            document.getElementById('instr-title').innerHTML = `⏱️ Recording... ${timeLeft}s left`;
+        }
+    }, 1000);
+    
+  } catch(e) {
+    showToast('Camera access denied — please allow camera permission', 'error');
+  }
+}
+
+// ── camera stop ──────────────────────────────────────────────────────────────
+function stopCamera() {
+  if (recordingTimer) clearInterval(recordingTimer);
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+  } else {
+      stopCameraUI();
+  }
+}
+
+function stopCameraUI() {
+  running = false;
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  
+  document.getElementById('start-btn').style.display = '';
+  document.getElementById('stop-btn').style.display  = 'none';
+  document.getElementById('overlay-msg').style.display = '';
+  document.getElementById('overlay-msg').innerHTML = `
+    <i class="fas fa-check-circle" style="font-size:28px;color:var(--primary);margin-bottom:8px;display:block"></i>
+    <div style="font-size:14px;font-weight:600">Measurement finished</div>`;
+    
+  video.style.display = 'none';
+  document.getElementById('wave-canvas').style.display = 'block';
+  updateStatus('Ready', '');
+  setInstruction('📷 Face the front camera', 'Ensure good lighting · Keep face in frame · Stay still for 20s');
+}
+
+
+// ── Comprehensive Medical Clinical Report Engine ───────────────────────────
+let currentReportData = null;
+
+function getClinicalInterpretation(bpm) {
+    if (bpm >= 140) {
+        return {
+            severity: "CRITICAL",
+            category: "Critical Tachycardia / Acute Arrhythmia Risk",
+            color: "#e74c3c",
+            badgeBg: "rgba(231,76,60,0.2)",
+            tone: "Severe Adrenergic Surge / Sympathetic Hyperactivity",
+            workload: "Critically High Myocardial Strain (Diastole Fill Reduced >50%)",
+            riskScore: "75/100 (HIGH RISK)",
+            summary: `Your heart rate is markedly elevated at ${bpm} BPM. At this rapid velocity, the ventricular diastolic filling phase is drastically truncated, reducing left ventricular stroke volume and raising myocardial oxygen consumption (MVO2). Immediate rest, paced vagal stimulation, and clinical monitoring are indicated.`,
+            causes: [
+                "Sympathetic nervous system fight-or-flight storm / adrenaline surge",
+                "Acute systemic hypovolemia or dehydration triggering compensatory tachycardia",
+                "High intake of stimulants (caffeine, pre-workout, energy drinks, nicotine)",
+                "Severe psychological panic or acute autonomic dysregulation",
+                "Underlying cardiac electrophysiological arrhythmia (e.g., PSVT, Atrial Flutter)"
+            ],
+            protocols: [
+                {
+                    title: "1. Vagal Nerve Stimulation (Modified Valsalva Maneuver)",
+                    desc: "Pinch nostrils closed, seal lips, and strain moderately as if blowing into an obstructed straw for 15 seconds. Immediately recline back flat with legs propped upward at 45 degrees. This triggers aortic baroreceptors to release acetylcholine, applying a rapid physiological brake to the SA node."
+                },
+                {
+                    title: "2. Mammalian Diving Reflex (Cold Face Immersion)",
+                    desc: "Press a clean towel soaked in ice water or a soft ice pack across your forehead, nose, and upper cheeks for 15–20 seconds while holding your breath. This engages the trigeminal-vagal reflex arc, slowing conduction."
+                },
+                {
+                    title: "3. Supported Orthostatic Rest & Positioning",
+                    desc: "Immediately cease all walking or movement. Sit leaning back with head and cervical spine firmly supported (semi-Fowler position), legs uncrossed. Loosen restrictive collar, tie, or waistband."
+                },
+                {
+                    title: "4. Rapid Cold Oral Rehydration",
+                    desc: "Drink 400–500 mL of cool water in continuous slow sips. Expanding circulating blood volume relieves sympathetic vascular tone and reduces compensatory pulse acceleration."
+                },
+                {
+                    title: "5. Strict Acute Substance Avoidance",
+                    desc: "Strictly avoid all coffee, tea, pre-workout powders, nicotine, cold decongestants (pseudoephedrine), alcohol, and hot showers for at least 4 hours."
+                }
+            ],
+            redFlags: "Chest pressure, squeezing pain radiating to left arm or jaw, acute dyspnea (shortness of breath), dizziness, or presyncope (feeling faint). If any of these are present, dial 112 immediately.",
+            isAbnormal: true
+        };
+    } else if (bpm > 100) {
+        return {
+            severity: "MODERATE",
+            category: "Sinus Tachycardia (Elevated Cardiac Activity)",
+            color: "#e67e22",
+            badgeBg: "rgba(230,126,34,0.2)",
+            tone: "Sympathetic Adrenergic Dominance",
+            workload: "Elevated Myocardial Oxygen Consumption",
+            riskScore: "45/100 (MODERATE RISK)",
+            summary: `Your resting heart rate is elevated (${bpm} BPM) above the 100 BPM physiological threshold. This indicates adrenergic sympathetic activation, mild dehydration, psychological stress, or caffeine metabolism.`,
+            causes: [
+                "Dehydration or low fluid intake during the day",
+                "Psychological stress, anxiety, or mental fatigue",
+                "Recent caffeine, energy drink, or tobacco consumption",
+                "Elevated body temperature or metabolic demand"
+            ],
+            protocols: [
+                {
+                    title: "1. 4-7-8 Parasympathetic Breathing Pacer",
+                    desc: "Engage in slow diaphragmatic breathing: Inhale 4s, hold 7s, exhale 8s for 4 cycles to stimulate vagal brake activity."
+                },
+                {
+                    title: "2. Hydrate with 400ml Cool Water",
+                    desc: "Drink 400ml room-temperature or cool water with electrolytes to restore intravascular volume."
+                },
+                {
+                    title: "3. 10 Minutes Quiet Recumbent Rest",
+                    desc: "Sit quietly with back supported, eyes closed, and reduce environmental noise or screen light."
+                },
+                {
+                    title: "4. Avoid Stimulants",
+                    desc: "Refrain from coffee, tea, and strenuous physical exertion for the next 2 hours."
+                }
+            ],
+            redFlags: "If heart rate remains over 120 BPM after 20 minutes of quiet rest, or if chest discomfort develops, seek clinical evaluation.",
+            isAbnormal: true
+        };
+    } else if (bpm >= 60) {
+        return {
+            severity: "OPTIMAL",
+            category: "Normal Sinus Rhythm (Optimal Resting Range)",
+            color: "#2ecc71",
+            badgeBg: "rgba(46,204,113,0.2)",
+            tone: "Balanced Autonomic Homeostasis",
+            workload: "Optimal Hemodynamic Equilibrium",
+            riskScore: "10/100 (LOW RISK)",
+            summary: `Your heart rate is in the healthy physiological adult resting range (${bpm} BPM). Sinoatrial nodal firing is in ideal equilibrium with myocardial oxygen demand and cardiac output.`,
+            causes: [
+                "Adequate rest and parasympathetic baseline tone",
+                "Healthy hydration status and physiological equilibrium",
+                "Normal sinoatrial pacemaker conduction"
+            ],
+            protocols: [
+                {
+                    title: "1. Maintain Daily Aerobic Conditioning",
+                    desc: "Aim for 150 minutes of moderate aerobic activity weekly to sustain heart muscle efficiency."
+                },
+                {
+                    title: "2. Preserve Autonomic Sleep Cycles",
+                    desc: "Maintain consistent 7-8 hour sleep schedules to protect cardiovascular circadian regulation."
+                },
+                {
+                    title: "3. Balanced Heart-Healthy Nutrition",
+                    desc: "Continue a balanced, low-sodium Mediterranean diet rich in potassium, leafy greens, and omega-3s."
+                }
+            ],
+            redFlags: "Routine healthy screening reading. Continue normal daily wellness habits.",
+            isAbnormal: false
+        };
+    } else if (bpm >= 50) {
+        return {
+            severity: "MILD_LOW",
+            category: "Mild Sinus Bradycardia (Rested Baseline)",
+            color: "#f1c40f",
+            badgeBg: "rgba(241,196,15,0.2)",
+            tone: "Vagal Dominance / High Parasympathetic Tone",
+            workload: "Low Cardiac Demand",
+            riskScore: "20/100 (LOW RISK)",
+            summary: `Your resting heart rate is slightly below 60 BPM (${bpm} BPM). In endurance athletes, regular exercisers, and rested adults, this is a physiological marker of efficient stroke volume.`,
+            causes: [
+                "High parasympathetic / vagal resting tone",
+                "Athletic conditioning and increased cardiac stroke volume",
+                "Deep physical relaxation or meditation"
+            ],
+            protocols: [
+                {
+                    title: "1. Rise Slowly to Prevent Orthostatic Dizziness",
+                    desc: "Pause briefly before standing from reclining positions to avoid transient postural blood pressure drop."
+                },
+                {
+                    title: "2. Hydrate with Electrolytes",
+                    desc: "Maintain regular fluid intake with trace minerals to support venous return."
+                }
+            ],
+            redFlags: "If accompanied by dizziness, faintness, or blurred vision, consult a physician.",
+            isAbnormal: false
+        };
+    } else {
+        return {
+            severity: "CRITICAL_LOW",
+            category: "Severe Sinus Bradycardia (Low Perfusion Risk)",
+            color: "#e74c3c",
+            badgeBg: "rgba(231,76,60,0.2)",
+            tone: "Excessive Vagal Hypertonia / Conduction Delay",
+            workload: "Sub-Basal Hemodynamic Output",
+            riskScore: "75/100 (HIGH RISK)",
+            summary: `Your heart rate is markedly low (${bpm} BPM). Unless you are an elite endurance athlete, rates this low can reduce cerebral and systemic blood perfusion.`,
+            causes: [
+                "Excessive vagal tone or conduction node slowing",
+                "Medication side effects (beta blockers, calcium antagonists)",
+                "Electrolyte imbalance (hyperkalemia) or thyroid dysfunction"
+            ],
+            protocols: [
+                {
+                    title: "1. Recline in a Safe Flat Position",
+                    desc: "Lie flat with legs slightly elevated to assist venous return to the heart."
+                },
+                {
+                    title: "2. Hydrate with Room-Temperature Electrolyte Solution",
+                    desc: "Drink 300 mL electrolyte water to optimize vascular volume."
+                },
+                {
+                    title: "3. Clinical Evaluation Advised",
+                    desc: "Connect with Dr. Jayanth Gowda for telecardiology assessment."
+                }
+            ],
+            redFlags: "Presyncope (feeling faint), lightheadedness, cold clammy extremities, or shortness of breath. Dial 112 if dizziness is severe.",
+            isAbnormal: true
+        };
+    }
+}
+
+function showClinicalMedicalReport(bpm, source, quality, bp, risk) {
+    const info = getClinicalInterpretation(bpm);
+    const now = new Date();
+    const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+
+    currentReportData = { bpm, source, quality, info, dateStr };
+    window.currentReportData = currentReportData;
+
+    // 1. Update On-Page Feedback Card
+    const onPage = document.getElementById('onPageMedicalFeedback');
+    if (onPage) {
+        onPage.style.display = 'block';
+        onPage.style.borderLeftColor = info.color;
+        
+        // Status pill & Title
+        const pill = document.getElementById('fb-status-pill');
+        if (pill) {
+            pill.textContent = info.severity + ' PRIORITY';
+            pill.style.background = info.badgeBg;
+            pill.style.color = info.color;
+        }
+
+        const icon = document.getElementById('fb-title-icon');
+        if (icon) icon.style.color = info.color;
+
+        document.getElementById('fb-rhythm-cat').textContent = info.category;
+        document.getElementById('fb-kpi-bpm').innerHTML = `${bpm} <span style="font-size:13px;color:var(--muted);">BPM</span>`;
+        document.getElementById('fb-kpi-bpm').style.color = info.color;
+        document.getElementById('fb-kpi-source').textContent = (source || 'Camera PPG') + ' • Quality: ' + (quality || 'Good');
+
+        document.getElementById('fb-autonomic').textContent = info.tone;
+        document.getElementById('fb-workload').textContent = info.workload;
+        document.getElementById('fb-risk-tier').textContent = info.riskScore;
+        document.getElementById('fb-risk-tier').style.color = info.color;
+
+        document.getElementById('fb-summary-text').innerHTML = `<strong>Physiological Analysis:</strong> ${info.summary}`;
+
+        // Root causes
+        const causesBox = document.getElementById('fb-root-causes');
+        if (causesBox && info.causes) {
+            causesBox.innerHTML = info.causes.map(c => `<span class="root-cause-chip"><i class="fas fa-circle-exclamation"></i> ${c}</span>`).join('');
+        }
+
+        // Actionable Protocols
+        const protoBox = document.getElementById('fb-protocols-container');
+        if (protoBox && info.protocols) {
+            protoBox.innerHTML = info.protocols.map(p => `
+                <div class="protocol-item">
+                    <strong style="color:${info.color}; font-size:13.5px;"><i class="fas fa-circle-check"></i> ${p.title}</strong>
+                    <div>${p.desc}</div>
+                </div>
+            `).join('');
+        }
+
+        // Red flags text
+        const redFlagsEl = document.getElementById('fb-red-flags-text');
+        if (redFlagsEl && info.redFlags) {
+            redFlagsEl.textContent = info.redFlags;
+        }
+
+        // Smooth scroll into view
+        onPage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // 2. Update Modal Fields
+    document.getElementById('modal-report-date').textContent = dateStr;
+    document.getElementById('modal-report-source').textContent = source || 'Smartphone PPG';
+    document.getElementById('modal-bpm-val').innerHTML = `${bpm} <span style="font-size:12px; color:var(--muted);">BPM</span>`;
+    document.getElementById('modal-bpm-val').style.color = info.color;
+    
+    document.getElementById('modal-rhythm-badge').textContent = info.category;
+    document.getElementById('modal-rhythm-badge').style.color = info.color;
+    
+    document.getElementById('modal-sqi-val').textContent = quality || 'Good';
+    document.getElementById('modal-autonomic-val').textContent = info.tone;
+    document.getElementById('modal-workload-val').textContent = info.workload;
+    
+    document.getElementById('modal-clinical-summary').innerHTML = info.summary;
+
+    const modalCauses = document.getElementById('modal-root-causes');
+    if (modalCauses && info.causes) {
+        modalCauses.innerHTML = info.causes.map(c => `<span class="root-cause-chip"><i class="fas fa-circle-exclamation"></i> ${c}</span>`).join('');
+    }
+
+    const modalProtos = document.getElementById('modal-protocols-list');
+    if (modalProtos && info.protocols) {
+        modalProtos.innerHTML = info.protocols.map(p => `
+            <div class="protocol-item">
+                <strong style="color:${info.color}; font-size:13.5px;"><i class="fas fa-circle-check"></i> ${p.title}</strong>
+                <div>${p.desc}</div>
+            </div>
+        `).join('');
+    }
+
+    // 3. Spoken voice announcement
+    if (typeof speakAssistant === 'function') {
+        if (bpm >= 140) {
+            speakAssistant(`Your heart rate is ${bpm} beats per minute, which indicates severe tachycardia. Please sit back and rest quietly. I recommend beginning a 4-7-8 breathing exercise and drinking cold water. If you feel any chest pain or dizziness, tap Consult Doctor immediately.`);
+        } else if (bpm > 100) {
+            speakAssistant(`Your heart rate is ${bpm} beats per minute, indicating sinus tachycardia. Please rest comfortably and begin slow diaphragmatic breathing.`);
+        } else if (bpm < 50) {
+            speakAssistant(`Your heart rate is ${bpm} beats per minute, indicating bradycardia. Please rest and stay hydrated.`);
+        } else {
+            speakAssistant(`Scan complete. Your heart rate is ${bpm} beats per minute, which is in the healthy normal range.`);
+        }
+    }
+}
+
+function closeClinicalReport() {
+    const modal = document.getElementById('clinicalReportModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function reopenReportModal() {
+    const modal = document.getElementById('clinicalReportModal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function emailReportToRelative() {
+    fetch('/api/health/share_card', {method: 'POST'})
+        .then(r => r.json())
+        .then(data => {
+            alert(data.status === 'success' ? '✅ Clinical report link emailed to your relative!' : 'Notice: ' + (data.message || data.error));
+        })
+        .catch(() => alert('Error sending report email.'));
+}
+
+// ── Interactive 4-7-8 Breathing Pacer ──────────────────────────────────────
+let breathingRunning = false;
+let breathingTimer = null;
+let breathingPhase = 'ready';
+let breathingRound = 1;
+const maxBreathingRounds = 3;
+
+function updateBreathingUI(phase, sec, round) {
+    const orb = document.getElementById('breathing-orb');
+    const phaseText = document.getElementById('breathing-phase-text');
+    const secText = document.getElementById('breathing-sec-text');
+    const subText = document.getElementById('breathing-instruction-sub');
+    if (!orb || !phaseText || !secText) return;
+
+    orb.className = 'breathing-orb ' + phase;
+    secText.textContent = sec;
+    
+    if (phase === 'inhale') {
+        phaseText.textContent = 'Inhale';
+        subText.innerHTML = `Round ${round}/${maxBreathingRounds}: <strong>Inhale slowly</strong> through your nose... (${sec}s remaining)`;
+    } else if (phase === 'hold') {
+        phaseText.textContent = 'Hold';
+        subText.innerHTML = `Round ${round}/${maxBreathingRounds}: <strong>Hold your breath gently</strong>... (${sec}s remaining)`;
+    } else if (phase === 'exhale') {
+        phaseText.textContent = 'Exhale';
+        subText.innerHTML = `Round ${round}/${maxBreathingRounds}: <strong>Exhale completely</strong> through mouth... (${sec}s remaining)`;
+    } else {
+        phaseText.textContent = 'Ready';
+        secText.textContent = '--';
+        subText.textContent = 'Click "Start Breathing Exercise" to begin 3 guided calming cycles.';
+    }
+}
+
+function toggleBreathingExercise() {
+    if (breathingRunning) {
+        stopBreathingExercise();
+    } else {
+        startBreathingExercise();
+    }
+}
+
+function startBreathingExercise() {
+    if (breathingRunning) return;
+    breathingRunning = true;
+    breathingRound = 1;
+    const btn = document.getElementById('btn-start-breathing');
+    if (btn) btn.innerHTML = '<i class="fas fa-pause"></i> Pause Breathing';
+
+    function runBreathingStep() {
+        if (!breathingRunning) return;
+        if (breathingRound > maxBreathingRounds) {
+            stopBreathingExercise();
+            updateBreathingUI('ready', '--', 1);
+            document.getElementById('breathing-instruction-sub').innerHTML = '✅ <strong>3 cycles completed!</strong> Notice your pulse stabilizing. Keep resting comfortably.';
+            showToast('3 Breathing cycles completed! Well done.', 'success');
+            return;
+        }
+
+        // Inhale 4s
+        let s = 4;
+        updateBreathingUI('inhale', s, breathingRound);
+        breathingTimer = setInterval(() => {
+            s--;
+            if (s > 0) {
+                updateBreathingUI('inhale', s, breathingRound);
+            } else {
+                clearInterval(breathingTimer);
+                // Hold 7s
+                let h = 7;
+                updateBreathingUI('hold', h, breathingRound);
+                breathingTimer = setInterval(() => {
+                    h--;
+                    if (h > 0) {
+                        updateBreathingUI('hold', h, breathingRound);
+                    } else {
+                        clearInterval(breathingTimer);
+                        // Exhale 8s
+                        let e = 8;
+                        updateBreathingUI('exhale', e, breathingRound);
+                        breathingTimer = setInterval(() => {
+                            e--;
+                            if (e > 0) {
+                                updateBreathingUI('exhale', e, breathingRound);
+                            } else {
+                                clearInterval(breathingTimer);
+                                breathingRound++;
+                                setTimeout(runBreathingStep, 1000);
+                            }
+                        }, 1000);
+                    }
+                }, 1000);
+            }
+        }, 1000);
+    }
+
+    runBreathingStep();
+}
+
+function stopBreathingExercise() {
+    breathingRunning = false;
+    if (breathingTimer) clearInterval(breathingTimer);
+    const btn = document.getElementById('btn-start-breathing');
+    if (btn) btn.innerHTML = '<i class="fas fa-play"></i> Start 4-7-8 Breathing';
+    updateBreathingUI('ready', '--', 1);
+}
+
+function resetBreathingExercise() {
+    stopBreathingExercise();
+    breathingRound = 1;
+    updateBreathingUI('ready', '--', 1);
+}
+
+window.triggerOnPageBreathing = function(start) {
+    if (start) {
+        if (!breathingRunning) startBreathingExercise();
+    } else {
+        if (breathingRunning) stopBreathingExercise();
+    }
+};
+
+// ── update UI ─────────────────────────────────────────────────────────────────
+function updateMetricsFromAPI(data) {
+  document.getElementById('bpm-val').textContent = data.bpm || '--';
+  document.getElementById('bp-val').textContent = data.estimated_bp || '--/--';
+  document.getElementById('risk-val').textContent = data.risk_score || '0';
+  document.getElementById('conf-val').textContent = Math.round(data.confidence * 100) + '%';
+  document.getElementById('risk-fill').style.width  = data.risk_score + '%';
+  document.getElementById('conf-fill').style.width = Math.round(data.confidence * 100) + '%';
+
+  // BPM pulse animation
+  const ring = document.getElementById('bpm-ring');
+  ring.classList.remove('pulse-anim');
+  void ring.offsetWidth;
+  ring.classList.add('pulse-anim');
+
+  // Enable integration buttons
+  if (data.confidence >= 0.5) {
+    document.getElementById('risk-btn').disabled = false;
+    document.getElementById('emg-btn').disabled  = false;
+  }
+  
+  if (data.status === 'critical') {
+      updateStatus('⚠️ Critical Alert', 'error');
+      showToast('Critical status detected. Emergency alert triggered.', 'error');
+  } else if (data.status === 'warning') {
+      updateStatus('Warning', 'warning');
+  } else {
+      updateStatus('Normal', 'success');
+  }
+  
+  // Optional: If waveform data is present from API, draw it
+  if (data.waveform && data.waveform.length > 0) {
+      drawWaveform(data.waveform);
+  }
+}
+
+function drawWaveform(buf) {
+  const wavCvs = document.getElementById('wave-canvas');
+  if (!wavCvs) return;
+  const wavCtx = wavCvs.getContext('2d');
+  const W = wavCvs.clientWidth, H = 160;
+  wavCvs.width = W; wavCvs.height = H;
+
+  // Background
+  wavCtx.fillStyle = '#050510';
+  wavCtx.fillRect(0,0,W,H);
+
+  // Grid
+  wavCtx.strokeStyle = 'rgba(255,255,255,0.04)';
+  wavCtx.lineWidth = 1;
+  for (let x=0;x<W;x+=W/10) { wavCtx.beginPath();wavCtx.moveTo(x,0);wavCtx.lineTo(x,H);wavCtx.stroke(); }
+  for (let y=0;y<H;y+=H/4)  { wavCtx.beginPath();wavCtx.moveTo(0,y);wavCtx.lineTo(W,y);wavCtx.stroke(); }
+
+  if (!buf || buf.length === 0 || buf.every(v=>v===0)) return;
+
+  const valid = buf.filter(v=>v!==0);
+  const mn = Math.min(...valid), mx = Math.max(...valid);
+  const range = mx - mn || 1;
+
+  // Glow + line
+  wavCtx.shadowBlur = 12;
+  wavCtx.shadowColor = '#1db954';
+  wavCtx.strokeStyle = '#1db954';
+  wavCtx.lineWidth = 2;
+  wavCtx.beginPath();
+  buf.forEach((v,i) => {
+    const x = (i / buf.length) * W;
+    const y = H - ((v - mn) / range) * (H * 0.7) - H * 0.15;
+    i===0 ? wavCtx.moveTo(x,y) : wavCtx.lineTo(x,y);
+  });
+  wavCtx.stroke();
+  wavCtx.shadowBlur = 0;
+
+  // Current value dot
+  const last = buf[buf.length-1];
+  const lx = W - 2;
+  const ly = H - ((last - mn) / range) * (H * 0.7) - H * 0.15;
+  wavCtx.fillStyle = '#1db954';
+  wavCtx.beginPath(); wavCtx.arc(lx, ly, 4, 0, 2*Math.PI); wavCtx.fill();
+}
+
+function setInstruction(title, sub, type) {
+  document.getElementById('instr-title').textContent = title;
+  document.getElementById('instr-sub').textContent = sub;
+}
+
+function updateStatus(msg, type) {
+  const el = document.getElementById('sys-status');
+  el.className = 'status-badge' + (type?' '+type:'');
+  el.innerHTML = `<i class="fas fa-circle" style="font-size:8px"></i> ${msg}`;
+}
+
+// ── Risk score integration ────────────────────────────────────────────────────
+async function sendToRisk() {
+  if (!lastResult || !lastResult.bpm) return;
+  const r = lastResult;
+  try {
+    const res  = await fetch('/api/heartrate/analyze', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        bpm: r.bpm,
+        hrv: r.hrv || (r.bpm > 100 ? 25 : 55),
+        sqi: r.sqi || 90,
+        confidence: r.confidence || 90,
+        signal_quality: r.signal_quality || 'good',
+        stress: r.bpm >= 120 ? 'High' : (r.bpm > 100 ? 'Moderate' : 'Normal'),
+        irregular: r.irregular || (r.bpm >= 140 || r.bpm < 50),
+        status: (r.bpm >= 140 || r.bpm < 50) ? 'critical' : (r.bpm > 100 ? 'warning' : 'normal')
+      })
+    });
+    const d = await res.json();
+    const el = document.getElementById('risk-result');
+    el.style.display = 'block';
+
+    const isHigh = d.risk_level === 'HIGH';
+    const isMod = d.risk_level === 'MODERATE';
+    const badgeColor = isHigh ? '#e74c3c' : (isMod ? '#f39c12' : '#2ecc71');
+    const badgeBg = isHigh ? 'rgba(231,76,60,0.18)' : (isMod ? 'rgba(243,156,18,0.18)' : 'rgba(46,204,113,0.18)');
+    const borderColor = isHigh ? 'rgba(231,76,60,0.45)' : (isMod ? 'rgba(243,156,18,0.45)' : 'rgba(46,204,113,0.45)');
+
+    el.innerHTML = `
+      <div style="padding:12px 14px;border-radius:10px;background:${badgeBg};border:1px solid ${borderColor};font-size:13px;line-height:1.5;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-weight:800;color:${badgeColor};font-size:14px;display:flex;align-items:center;gap:6px;">
+            <i class="fas ${isHigh ? 'fa-shield-virus' : 'fa-shield-heart'}"></i> Risk Level: ${d.risk_level}
+          </span>
+          <span style="font-weight:800;font-size:14px;color:#fff;">Score: ${d.risk_score}/100</span>
+        </div>
+        <div style="height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;margin-bottom:8px;">
+          <div style="width:${d.risk_score}%;height:100%;background:${badgeColor};transition:width .4s;"></div>
+        </div>
+        ${d.alert ? `<div style="color:${badgeColor};font-weight:700;margin-bottom:6px;"><i class="fas fa-exclamation-triangle"></i> ${d.alert}</div>` : ''}
+        <div style="font-size:12px;color:#ccc;">Classification: <strong>${d.category || 'Evaluated'}</strong> &bull; Myocardial load analyzed.</div>
+        ${isHigh ? `
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+            <a href="/appointments" style="background:#e74c3c;color:#fff;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
+              <i class="fas fa-video"></i> Video Consult Doctor
+            </a>
+            <button onclick="toggleBreathingExercise()" style="background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">
+              <i class="fas fa-wind"></i> Start 4-7-8 Breathing
+            </button>
+          </div>
+        ` : ''}
+      </div>`;
+    showToast(`Risk score updated: ${d.risk_level} (${d.risk_score}/100)`, isHigh ? 'error' : (isMod ? 'warning' : 'success'));
+  } catch(e) {
+    showToast('Failed to connect to risk engine', 'error');
+  }
+}
+
+// ── Emergency check ───────────────────────────────────────────────────────────
+function checkEmergency() {
+  if (!lastResult || !lastResult.bpm) return;
+  const bpm = lastResult.bpm;
+  const irregular = lastResult.irregular || false;
+  const el = document.getElementById('emg-result');
+  el.style.display = 'block';
+
+  if (bpm >= 140 || bpm < 50 || irregular) {
+    el.innerHTML = `
+      <div style="padding:12px 14px;border-radius:10px;background:rgba(231,76,60,0.18);border:1px solid rgba(231,76,60,0.45);font-size:13px;color:#ff6b6b;line-height:1.5;">
+        <div style="font-weight:800;font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
+          <i class="fas fa-exclamation-triangle"></i> ALERT: ${bpm >= 140 ? 'Severe Tachycardia' : (bpm < 50 ? 'Severe Bradycardia' : 'Arrhythmia')} Detected (${bpm} BPM)
+        </div>
+        <div style="color:#ddd;margin-bottom:8px;">Your heart rate is significantly abnormal (healthy baseline: 60–100 BPM). Ventricular filling is compromised and myocardial wall strain is elevated. Immediate evaluation is advised.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <a href="/emergency" style="background:#e74c3c;color:#fff;padding:7px 12px;border-radius:6px;font-weight:800;text-decoration:none;font-size:12px;display:inline-flex;align-items:center;gap:5px;">
+            <i class="fas fa-ambulance"></i> Open Emergency SOS
+          </a>
+          <a href="/appointments" style="background:#3498db;color:#fff;padding:7px 12px;border-radius:6px;font-weight:700;text-decoration:none;font-size:12px;display:inline-flex;align-items:center;gap:5px;">
+            <i class="fas fa-video"></i> Video Consult Doctor
+          </a>
+        </div>
+      </div>`;
+    showToast(`⚠️ Abnormal HR detected (${bpm} BPM) — clinical triage recommended!`, 'error');
+  } else if (bpm > 100) {
+    el.innerHTML = `
+      <div style="padding:12px 14px;border-radius:10px;background:rgba(230,126,34,0.15);border:1px solid rgba(230,126,34,0.4);font-size:13px;color:#f39c12;line-height:1.5;">
+        <div style="font-weight:800;font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
+          <i class="fas fa-triangle-exclamation"></i> Elevated Heart Rate (${bpm} BPM) — Sinus Tachycardia
+        </div>
+        <div style="color:#ddd;">Above 100 BPM resting limit. Sit comfortably, practice 4-7-8 breathing, and drink cool water.</div>
+      </div>`;
+    showToast(`Elevated heart rate (${bpm} BPM)`, 'warning');
+  } else if (bpm >= 60 && bpm <= 100) {
+    el.innerHTML = `
+      <div style="padding:12px 14px;border-radius:10px;background:rgba(46,204,113,0.12);border:1px solid rgba(46,204,113,0.3);font-size:13px;color:#2ecc71;line-height:1.5;">
+        <div style="font-weight:800;font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
+          <i class="fas fa-circle-check"></i> Normal Sinus Rhythm (${bpm} BPM)
+        </div>
+        <div style="color:#ddd;">Your heart rate is within the healthy adult resting range (60–100 BPM). Autonomic tone is balanced.</div>
+      </div>`;
+    showToast(`Heart rate is normal (${bpm} BPM) ✅`, 'success');
+  } else {
+    // 50-59
+    el.innerHTML = `
+      <div style="padding:12px 14px;border-radius:10px;background:rgba(241,196,15,0.12);border:1px solid rgba(241,196,15,0.3);font-size:13px;color:#f1c40f;line-height:1.5;">
+        <div style="font-weight:800;font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
+          <i class="fas fa-info-circle"></i> Mild Bradycardia (${bpm} BPM)
+        </div>
+        <div style="color:#ddd;">Resting rate slightly below 60 BPM. Common in well-rested states and athletes. Monitor for dizziness.</div>
+      </div>`;
+    showToast(`Mild bradycardia (${bpm} BPM)`, 'info');
+  }
+}
+
+// Keep waveform animating even when idle
+requestAnimationFrame(function tick(){
+  if (!running && typeof drawWaveform === 'function' && typeof waveBuffer !== 'undefined') drawWaveform(waveBuffer);
+  requestAnimationFrame(tick);
+});
+
+// ── Finger PPG Logic ────────────────────────────────────────────────────────
+
+let fingerStream = null;
+let fingerVideo = document.getElementById('finger-video');
+let fingerCanvas = document.getElementById('finger-process-canvas');
+let fingerCtx = fingerCanvas ? fingerCanvas.getContext('2d') : null;
+let fingerWaveCvs = document.getElementById('finger-wave-canvas');
+let fingerWaveCtx = fingerWaveCvs ? fingerWaveCvs.getContext('2d') : null;
+let fingerRunning = false;
+let fingerRedData = [];
+let fingerTimestamps = [];
+let fingerBpmList = [];
+let ppgStartTime = null;
+let ppgQuality = 'Poor';
+
+async function startFingerPPG() {
+  if (!fingerCtx || !fingerWaveCtx) return;
+  try {
+    fingerStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: {ideal: 320}, height: {ideal: 240}, frameRate: {ideal: 30} }
+    });
+    const track = fingerStream.getVideoTracks()[0];
+    if (track.getCapabilities && track.getCapabilities().torch) {
+      track.applyConstraints({ advanced: [{ torch: true }] }).catch(e => console.log('Torch not supported', e));
+    }
+    
+    fingerVideo.srcObject = fingerStream;
+    await fingerVideo.play();
+    
+    fingerCanvas.width = 320;
+    fingerCanvas.height = 240;
+    
+    fingerRunning = true;
+    document.getElementById('start-finger-btn').style.display = 'none';
+    document.getElementById('stop-finger-btn').style.display = '';
+    document.getElementById('finger-status-overlay').style.display = 'none';
+    
+    fingerRedData = [];
+    fingerTimestamps = [];
+    fingerBpmList = [];
+    document.getElementById('finger-bpm-val').textContent = '--';
+    ppgStartTime = performance.now();
+    
+    requestAnimationFrame(processFingerFrame);
+    
+    // 25 second timer
+    setTimeout(() => {
+        if(fingerRunning) finishFingerPPG();
+    }, 25000);
+    
+  } catch(e) {
+    showToast('Camera access denied for Finger PPG', 'error');
+  }
+}
+
+function stopFingerPPG() {
+  fingerRunning = false;
+  if (fingerStream) {
+    const track = fingerStream.getVideoTracks()[0];
+    if (track.getCapabilities && track.getCapabilities().torch) {
+      track.applyConstraints({ advanced: [{ torch: false }] }).catch(()=>{});
+    }
+    fingerStream.getTracks().forEach(t => t.stop());
+  }
+  document.getElementById('start-finger-btn').style.display = '';
+  document.getElementById('stop-finger-btn').style.display = 'none';
+  document.getElementById('finger-status-overlay').style.display = 'flex';
+  document.getElementById('finger-status-overlay').innerHTML = 'Stopped';
+}
+
+function finishFingerPPG() {
+    stopFingerPPG();
+    if(fingerBpmList.length === 0) {
+        showToast("Measurement failed. Please try again.", "error");
+        return;
+    }
+    let avgBpm = Math.round(fingerBpmList.reduce((a,b)=>a+b,0) / fingerBpmList.length);
+    
+    // Simple SQI: Check variance
+    let variance = 0;
+    if(fingerRedData.length > 0) {
+        let mean = fingerRedData.reduce((a,b)=>a+b,0)/fingerRedData.length;
+        variance = fingerRedData.reduce((a,b)=>a+Math.pow(b-mean,2),0)/fingerRedData.length;
+    }
+    if (variance < 10) ppgQuality = 'Poor';
+    else if (variance < 50) ppgQuality = 'Fair';
+    else ppgQuality = 'Good';
+
+    if (ppgQuality === 'Poor') {
+        showToast("Signal quality too poor. Please press firmly and try again.", "error");
+        document.getElementById('finger-status-overlay').innerHTML = 'Poor Quality. Try Again.';
+        return;
+    }
+    
+    document.getElementById('finger-status-overlay').innerHTML = `Finished: ${avgBpm} BPM (${ppgQuality})`;
+    
+    // Populate lastResult so Risk Score & Emergency Check work immediately
+    lastResult = {
+        bpm: avgBpm,
+        hrv: Math.max(18, Math.round(65 - (avgBpm > 100 ? (avgBpm - 100) * 0.45 : 0))),
+        sqi: ppgQuality === 'Good' ? 95 : 70,
+        confidence: 0.9,
+        signal_quality: ppgQuality.toLowerCase(),
+        stress: avgBpm >= 120 ? 'High' : (avgBpm > 100 ? 'Moderate' : 'Normal'),
+        irregular: (avgBpm >= 140 || avgBpm < 50),
+        status: (avgBpm >= 140 || avgBpm < 50) ? 'critical' : (avgBpm > 100 ? 'warning' : 'normal')
+    };
+    window.lastResult = lastResult;
+    document.getElementById('risk-btn').disabled = false;
+    document.getElementById('emg-btn').disabled = false;
+
+    // Save to DB
+    fetch('/api/health/save_reading', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({bpm: avgBpm, source: 'Finger', quality: ppgQuality})
+    }).then(r => r.json()).then(data => {
+        showToast("Measurement saved to your profile!", "success");
+        showClinicalMedicalReport(avgBpm, 'Finger Camera PPG', ppgQuality, null, null);
+        if (data.appointment_created) {
+            document.getElementById('finger-status-overlay').innerHTML = `⚠️ ${avgBpm} BPM — Abnormal! Doctor appointment scheduled.`;
+            showToast("⚠️ Abnormal HR detected! A doctor appointment has been automatically scheduled.", "error");
+        }
+    }).catch(e => {
+        showToast("Measurement recorded", "info");
+        showClinicalMedicalReport(avgBpm, 'Finger Camera PPG', ppgQuality, null, null);
+    });
+}
+
+function processFingerFrame(now) {
+  if (!fingerRunning) return;
+  
+  fingerCtx.drawImage(fingerVideo, 0, 0, fingerCanvas.width, fingerCanvas.height);
+  let frame = fingerCtx.getImageData(0, 0, fingerCanvas.width, fingerCanvas.height);
+  let data = frame.data;
+  
+  let rSum = 0;
+  let count = 0;
+  let startX = fingerCanvas.width/2 - 25;
+  let endX = fingerCanvas.width/2 + 25;
+  let startY = fingerCanvas.height/2 - 25;
+  let endY = fingerCanvas.height/2 + 25;
+  
+  for(let y=startY; y<endY; y++){
+    for(let x=startX; x<endX; x++){
+      let i = (y * fingerCanvas.width + x) * 4;
+      rSum += data[i]; // Red channel
+      count++;
+    }
+  }
+  let rAvg = rSum / count;
+  
+  fingerRedData.push(rAvg);
+  fingerTimestamps.push(now);
+  
+  if (fingerRedData.length > 150) {
+    fingerRedData.shift();
+    fingerTimestamps.shift();
+  }
+  
+  detectFingerBPM();
+  drawFingerWaveform();
+  
+  // Update progress
+  let elapsed = now - ppgStartTime;
+  if(elapsed < 25000) {
+      document.getElementById('finger-status-overlay').style.display = 'flex';
+      document.getElementById('finger-status-overlay').innerHTML = `Measuring... ${Math.round(25 - elapsed/1000)}s remaining`;
+  }
+  
+  requestAnimationFrame(processFingerFrame);
+}
+function detectFingerBPM() {
+  if (fingerRedData.length < 60) return;
+  
+  let smoothed = [];
+  let window = 5;
+  for(let i=0; i<fingerRedData.length; i++) {
+    let sum = 0, c = 0;
+    for(let j=Math.max(0, i-window); j<=Math.min(fingerRedData.length-1, i+window); j++){
+      sum += fingerRedData[j]; c++;
+    }
+    smoothed.push(sum/c);
+  }
+  
+  let peaks = [];
+  for(let i=2; i<smoothed.length-2; i++) {
+    if (smoothed[i] > smoothed[i-1] && smoothed[i] > smoothed[i-2] &&
+        smoothed[i] > smoothed[i+1] && smoothed[i] > smoothed[i+2]) {
+      
+      let localAvg = 0;
+      for(let j=Math.max(0, i-10); j<=Math.min(smoothed.length-1, i+10); j++){
+         localAvg += smoothed[j];
+      }
+      localAvg /= (Math.min(smoothed.length-1, i+10) - Math.max(0, i-10) + 1);
+      
+      if (smoothed[i] > localAvg * 1.01) { 
+         peaks.push(fingerTimestamps[i]);
+         i += 10; 
+      }
+    }
+  }
+  
+  if (peaks.length >= 2) {
+    let intervals = [];
+    for(let i=1; i<peaks.length; i++){
+      intervals.push(peaks[i] - peaks[i-1]);
+    }
+    let avgInterval = intervals.reduce((a,b)=>a+b, 0) / intervals.length;
+    let bpm = 60000 / avgInterval;
+    
+    if (bpm > 40 && bpm < 200) {
+       fingerBpmList.push(bpm);
+       if (fingerBpmList.length > 5) fingerBpmList.shift();
+       let avgBpm = fingerBpmList.reduce((a,b)=>a+b,0) / fingerBpmList.length;
+       document.getElementById('finger-bpm-val').textContent = Math.round(avgBpm);
+       
+       if (!lastResult) lastResult = {};
+       lastResult.bpm = Math.round(avgBpm);
+       lastResult.confidence = 0.8;
+       document.getElementById('risk-btn').disabled = false;
+       document.getElementById('emg-btn').disabled  = false;
+    }
+  }
+}
+
+function drawFingerWaveform() {
+  let W = fingerWaveCvs.clientWidth;
+  let H = fingerWaveCvs.clientHeight;
+  if(fingerWaveCvs.width !== W) fingerWaveCvs.width = W;
+  if(fingerWaveCvs.height !== H) fingerWaveCvs.height = H;
+  
+  fingerWaveCtx.clearRect(0,0,W,H);
+  if(fingerRedData.length < 2) return;
+  
+  let displayData = fingerRedData.map(v => -v);
+  let min = Math.min(...displayData);
+  let max = Math.max(...displayData);
+  let range = max - min || 1;
+  
+  fingerWaveCtx.strokeStyle = '#e74c3c';
+  fingerWaveCtx.lineWidth = 2;
+  fingerWaveCtx.beginPath();
+  
+  for(let i=0; i<displayData.length; i++) {
+    let x = (i / 150) * W;
+    let y = H - ((displayData[i] - min) / range) * (H * 0.8) - H*0.1;
+    if(i===0) fingerWaveCtx.moveTo(x,y);
+    else fingerWaveCtx.lineTo(x,y);
+  }
+  fingerWaveCtx.stroke();
+}
+
+// ── Automatic Voice / URL Query Action Trigger ─────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const autostart = params.get('autostart');
+  if (autostart === 'finger' || autostart === '1' || autostart === 'true') {
+    setTimeout(() => {
+      const fingerBox = document.getElementById('start-finger-btn');
+      if (fingerBox) {
+        fingerBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        startFingerPPG();
+        if (typeof speakAssistant === 'function') {
+          speakAssistant("Starting Finger PPG scan. Please cover the camera lens completely with your index finger and hold still.");
+        }
+      }
+    }, 700);
+  } else if (autostart === 'face' || autostart === 'camera') {
+    setTimeout(() => {
+      const camBox = document.getElementById('start-btn');
+      if (camBox) {
+        camBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        startCamera();
+        if (typeof speakAssistant === 'function') {
+          speakAssistant("Starting Face Camera scan. Please position your face in the center of the frame and stay still for 20 seconds.");
+        }
+      }
+    }, 700);
+  }
+});
+</script>
+
+{% if current_user.is_authenticated %}
+<script src="/static/voice.js"></script>
+{% endif %}
+</body>
+
+</html>

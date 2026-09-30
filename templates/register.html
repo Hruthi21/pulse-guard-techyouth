@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - PulseGuard AI</title>
+  <link rel="stylesheet" href="/static/pulseguard.css">
+  <style>
+    body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: var(--bg); padding: 20px; }
+    .auth-card { background: var(--card-bg); padding: 40px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); width: 100%; max-width: 500px; text-align: center; }
+    .auth-card h2 { margin-top: 0; color: var(--text); }
+    .auth-form { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; text-align: left; }
+    .auth-form label { font-size: 14px; font-weight: 600; color: var(--muted); }
+    .auth-form input, .auth-form select { padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 16px; width: 100%; box-sizing: border-box; }
+    .auth-btn { background: var(--primary); color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+    .auth-btn:hover { background: #169c46; }
+    .auth-links { margin-top: 20px; font-size: 14px; text-align: center; }
+    .auth-links a { color: var(--primary); text-decoration: none; }
+    .section-title { font-size: 16px; margin: 10px 0 -5px; border-bottom: 1px solid var(--border); padding-bottom: 5px; color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="auth-card">
+    <h2>Create Account</h2>
+    <p style="color: var(--muted); margin-top: -10px;">Join PulseGuard AI today.</p>
+    <form class="auth-form" method="POST" action="/register">
+      
+      <div class="section-title">Personal Information</div>
+      <input type="text" name="full_name" placeholder="Full Name" required>
+      <input type="email" name="email" placeholder="Email Address" required>
+      <input type="tel" name="phone" placeholder="Phone Number (e.g. +1234567890)" required>
+      <input type="password" name="password" placeholder="Password" required>
+      
+      <div style="display: flex; gap: 10px;">
+        <input type="number" name="age" placeholder="Age" required style="flex: 1;">
+        <select name="gender" required style="flex: 1;">
+          <option value="" disabled selected>Gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
+      <div class="section-title">Emergency Contact (Authorized Relative)</div>
+      <p style="font-size: 12px; color: var(--muted); margin: 0;">This person will receive SOS calls, SMS, and automated health reports.</p>
+      <input type="text" name="relative_name" placeholder="Relative's Name" required>
+      <input type="tel" name="relative_phone" placeholder="Relative's Phone (e.g. +1234567890)" required>
+      <input type="email" name="relative_email" placeholder="Relative's Email" required>
+      
+      <button type="submit" class="auth-btn">Register</button>
+    </form>
+    <div class="auth-links">
+      Already have an account? <a href="/login">Login here</a>
+    </div>
+  </div>
+</body>
+</html>

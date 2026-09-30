@@ -1,0 +1,14 @@
+.qodo
+xgb_heart_disease_model_2.pkl
+.dist
+.env
+__pycache__/
+*.pyc
+*.db
+.gradle/
+**/.gradle/
+build/
+**/build/
+*.apk
+.idea/
+*.iml

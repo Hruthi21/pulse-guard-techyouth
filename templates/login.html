@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - PulseGuard AI</title>
+  <link rel="stylesheet" href="/static/pulseguard.css">
+  <style>
+    body { display: flex; justify-content: center; align-items: center; height: 100vh; background-color: var(--bg); }
+    .auth-card { background: var(--card-bg); padding: 40px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); width: 100%; max-width: 400px; text-align: center; }
+    .auth-card h2 { margin-top: 0; color: var(--text); }
+    .auth-form { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
+    .auth-form input { padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 16px; }
+    .auth-btn { background: var(--primary); color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s; }
+    .auth-btn:hover { background: #169c46; }
+    .auth-links { margin-top: 20px; font-size: 14px; }
+    .auth-links a { color: var(--primary); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="auth-card">
+    <h2>PulseGuard AI</h2>
+    <p style="color: var(--muted); margin-top: -10px;">Welcome back. Please login.</p>
+    <form class="auth-form" method="POST" action="/login">
+      <input type="email" name="email" placeholder="Email Address" required>
+      <input type="password" name="password" placeholder="Password" required>
+      <button type="submit" class="auth-btn">Login</button>
+    </form>
+    <div class="auth-links">
+      Don't have an account? <a href="/register">Register here</a>
+    </div>
+  </div>
+</body>
+</html>

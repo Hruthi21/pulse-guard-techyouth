@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>PulseGuard AI — Dashboard</title>
+  <meta name="description"
+    content="PulseGuard AI cardiovascular health dashboard — track your risk score, health trends, and personalized recommendations." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="/static/pulseguard.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+  <!-- ── Sidebar ─────────────────────────────────────────────────────── -->
+  <aside class="pg-sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <i class="fas fa-heartbeat logo-icon"></i>
+    <span class="logo-text">PulseGuard AI</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="/" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+    <a href="/dashboard" class="nav-item active"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+    <a href="/heartrate" class="nav-item "><i class="fas fa-heartbeat"></i><span>Heart Rate (PPG)</span></a>
+    <a href="/wearable" class="nav-item " style="color:#46f0a0;font-weight:600;"><i class="fas fa-cube"></i><span>PulseGuard Wear (3D)</span></a>
+    <a href="/appointments" class="nav-item " style="color:#2ecc71;font-weight:600;"><i class="fas fa-video"></i><span>Doctor Video Call</span></a>
+    <a href="/doctor" class="nav-item " style="color:#3498db;font-weight:600;"><i class="fas fa-user-md"></i><span>Doctor Portal</span></a>
+    <a href="/reports" class="nav-item "><i class="fas fa-file-medical"></i><span>Reports & Family</span></a>
+    <a href="/chat" class="nav-item "><i class="fas fa-robot"></i><span>AI Assistant</span></a>
+    <a href="/lifestyle" class="nav-item "><i class="fas fa-running"></i><span>Lifestyle</span></a>
+    <a href="/diet" class="nav-item "><i class="fas fa-apple-alt"></i><span>Diet Analysis</span></a>
+    <a href="/emergency" class="nav-item "><i class="fas fa-ambulance"></i><span>Emergency</span></a>
+    {% if current_user.is_authenticated %}
+    <a href="/logout" class="nav-item" style="color:#e74c3c; margin-top:14px;"><i class="fas fa-sign-out-alt"></i><span>Logout ({{ current_user.full_name.split()[0] }})</span></a>
+    {% else %}
+    <a href="/login" class="nav-item" style="color:#2ecc71; margin-top:14px;"><i class="fas fa-sign-in-alt"></i><span>Login</span></a>
+    <a href="/register" class="nav-item"><i class="fas fa-user-plus"></i><span>Register</span></a>
+    {% endif %}
+  </nav>
+  <a href="/emergency" class="sidebar-sos"><i class="fas fa-exclamation-triangle"></i><span>SOS Emergency</span></a>
+</aside>
+
+  <!-- ── Main ────────────────────────────────────────────────────────── -->
+  <main class="pg-main">
+    <header class="pg-header">
+      <div>
+        <h1>Health Dashboard</h1>
+        <div class="header-sub">Your cardiovascular risk overview</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;">
+        <span class="stat-pill"><i class="fas fa-clock"></i> <span id="live-time"></span></span>
+        <a href="/" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i>
+          Back to Home</a>
+      </div>
+    </header>
+
+    <div class="pg-content">
+
+      <!-- ── NEW FEATURES PROMINENT ACCESS BANNER ────────────────────── -->
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:18px; margin-bottom:24px;" class="fade-in">
+        
+        <!-- Doctor Video Call Card -->
+        <div class="card" style="border-left: 4px solid #2ecc71; background: linear-gradient(135deg, rgba(46,204,113,0.12), rgba(255,255,255,0.02));">
+          <div style="font-size:11px; color:#2ecc71; text-transform:uppercase; font-weight:800; letter-spacing:1px; margin-bottom:4px;">Telemedicine & Video</div>
+          <h3 style="margin:0 0 8px; font-size:18px;"><i class="fas fa-video" style="color:#2ecc71; margin-right:6px;"></i> Doctor Consultation</h3>
+          <p style="font-size:13px; color:var(--muted); line-height:1.5; margin:0 0 16px;">
+            Auto-schedules when abnormal PPG heart rate is detected. Accept & join live 1-on-1 video call.
+          </p>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <a href="/appointments" style="padding:8px 16px; font-size:13px; font-weight:700; text-decoration:none; border-radius:8px; background:#2ecc71; color:#fff; display:inline-flex; align-items:center; gap:6px;">
+              <i class="fas fa-calendar-check"></i> My Appointments
+            </a>
+            <a href="/doctor" style="padding:8px 16px; font-size:13px; font-weight:700; text-decoration:none; border-radius:8px; background:rgba(52,152,219,0.15); color:#3498db; border:1px solid rgba(52,152,219,0.3); display:inline-flex; align-items:center; gap:6px;">
+              <i class="fas fa-user-md"></i> Doctor Portal
+            </a>
+          </div>
+        </div>
+
+        <!-- Reports & Family Card -->
+        <div class="card" style="border-left: 4px solid #3498db; background: linear-gradient(135deg, rgba(52,152,219,0.12), rgba(255,255,255,0.02));">
+          <div style="font-size:11px; color:#3498db; text-transform:uppercase; font-weight:800; letter-spacing:1px; margin-bottom:4px;">Daily Monitoring</div>
+          <h3 style="margin:0 0 8px; font-size:18px;"><i class="fas fa-file-medical" style="color:#3498db; margin-right:6px;"></i> Reports & Family</h3>
+          <p style="font-size:13px; color:var(--muted); line-height:1.5; margin:0 0 16px;">
+            Automatic daily reports emailed to authorized relative + shareable live health monitoring card.
+          </p>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <a href="/reports" style="padding:8px 16px; font-size:13px; font-weight:700; text-decoration:none; border-radius:8px; background:#3498db; color:#fff; display:inline-flex; align-items:center; gap:6px;">
+              <i class="fas fa-chart-bar"></i> View Reports
+            </a>
+            {% if current_user.is_authenticated %}
+            <a href="/family/{{ current_user.id }}" target="_blank" style="padding:8px 16px; font-size:13px; font-weight:700; text-decoration:none; border-radius:8px; background:rgba(255,255,255,0.06); color:var(--text); border:1px solid var(--border); display:inline-flex; align-items:center; gap:6px;">
+              <i class="fas fa-share-alt"></i> Family Card
+            </a>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- 25s Camera PPG Card -->
+        <div class="card" style="border-left: 4px solid #e74c3c; background: linear-gradient(135deg, rgba(231,76,60,0.12), rgba(255,255,255,0.02));">
+          <div style="font-size:11px; color:#e74c3c; text-transform:uppercase; font-weight:800; letter-spacing:1px; margin-bottom:4px;">Clinical Screening</div>
+          <h3 style="margin:0 0 8px; font-size:18px;"><i class="fas fa-heartbeat" style="color:#e74c3c; margin-right:6px;"></i> 25s Finger PPG Scan</h3>
+          <p style="font-size:13px; color:var(--muted); line-height:1.5; margin:0 0 16px;">
+            Smartphone camera PPG with 25s timer, SQI noise filtering, auto-doctor scheduling on abnormal pulse.
+          </p>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <a href="/heartrate" style="padding:8px 16px; font-size:13px; font-weight:700; text-decoration:none; border-radius:8px; background:#e74c3c; color:#fff; display:inline-flex; align-items:center; gap:6px;">
+              <i class="fas fa-play"></i> Start PPG Scan
+            </a>
+            <a href="/emergency" style="padding:8px 16px; font-size:13px; font-weight:700; text-decoration:none; border-radius:8px; background:rgba(231,76,60,0.15); color:#e74c3c; border:1px solid rgba(231,76,60,0.3); display:inline-flex; align-items:center; gap:6px;">
+              <i class="fas fa-ambulance"></i> SOS Call
+            </a>
+          </div>
+        <!-- Phone Steps Card (Health Connect sync) -->
+        <div class="card" style="border-left: 4px solid #9b59b6; background: linear-gradient(135deg, rgba(155,89,182,0.12), rgba(255,255,255,0.02));">
+          <div style="font-size:11px; color:#9b59b6; text-transform:uppercase; font-weight:800; letter-spacing:1px; margin-bottom:4px;">Android Health Connect</div>
+          <h3 style="margin:0 0 6px; font-size:18px;"><i class="fas fa-shoe-prints" style="color:#9b59b6; margin-right:6px;"></i> Today's Steps</h3>
+          <div style="font-size:36px; font-weight:900; color:#9b59b6; margin:6px 0 4px;" id="db-steps">—</div>
+          <div style="height:6px;background:var(--darker);border-radius:3px;overflow:hidden;margin-bottom:10px;">
+            <div id="db-steps-bar" style="height:100%;border-radius:3px;background:#9b59b6;width:0%;transition:width 0.8s;"></div>
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:14px;" id="db-steps-meta">Connect your phone to see live steps.</div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <a href="/connect-phone" style="padding:8px 16px; font-size:13px; font-weight:700; text-decoration:none; border-radius:8px; background:#9b59b6; color:#fff; display:inline-flex; align-items:center; gap:6px;">
+              <i class="fas fa-mobile-alt"></i> Connect Phone
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Risk Score Calculator -->
+      <section class="card fade-in" style="margin-bottom:24px;">
+        <div class="section-title"><i class="fas fa-calculator"></i> Quick Risk Score Calculator</div>
+        <div class="grid-4" style="margin-bottom:18px;">
+          <div>
+            <label class="pg-label">Age</label>
+            <input type="number" id="d-age" class="pg-input" placeholder="e.g. 45" value="40" />
+          </div>
+          <div>
+            <label class="pg-label">BMI</label>
+            <input type="number" id="d-bmi" class="pg-input" placeholder="e.g. 24.5" value="24" />
+          </div>
+          <div>
+            <label class="pg-label">Cholesterol</label>
+            <select id="d-cholesterol" class="pg-select">
+              <option value="0">Normal</option>
+              <option value="1">Borderline</option>
+              <option value="2">High</option>
+            </select>
+          </div>
+          <div>
+            <label class="pg-label">Smoking</label>
+            <select id="d-smoking" class="pg-select">
+              <option value="0">No</option>
+              <option value="1">Occasionally</option>
+              <option value="2">Regular</option>
+            </select>
+          </div>
+          <div>
+            <label class="pg-label">Alcohol</label>
+            <select id="d-alcohol" class="pg-select">
+              <option value="0">No</option>
+              <option value="1">Occasionally</option>
+              <option value="2">Regular</option>
+            </select>
+          </div>
+          <div>
+            <label class="pg-label">Physical Activity</label>
+            <select id="d-physical" class="pg-select">
+              <option value="0">Low</option>
+              <option value="1" selected>Medium</option>
+              <option value="2">High</option>
+            </select>
+          </div>
+          <div>
+            <label class="pg-label">Hypertension</label>
+            <select id="d-hypertension" class="pg-select">
+              <option value="0">No</option>
+              <option value="1">Yes</option>
+            </select>
+          </div>
+          <div>
+            <label class="pg-label">Diabetes</label>
+            <select id="d-diabetes" class="pg-select">
+              <option value="0">No</option>
+              <option value="1">Yes</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <div>
+            <label class="pg-label">Family History of CVD</label>
+            <select id="d-family" class="pg-select" style="width:200px;">
+              <option value="0">No</option>
+              <option value="1">Yes</option>
+            </select>
+          </div>
+          <div>
+            <label class="pg-label">Sleep Quality</label>
+            <select id="d-sleep" class="pg-select" style="width:160px;">
+              <option value="0">Poor</option>
+              <option value="1" selected>Average</option>
+              <option value="2">Good</option>
+            </select>
+          </div>
+          <button class="pg-btn pg-btn-primary" onclick="calculateRisk()" style="margin-top:22px;">
+            <i class="fas fa-heartbeat"></i> Calculate Risk Score
+          </button>
+        </div>
+      </section>
+
+      <!-- Stats row -->
+      <div class="grid-4 fade-in" style="margin-bottom:24px;">
+        <div class="card" style="text-align:center;">
+          <div class="card-title">Risk Score</div>
+          <div class="card-value" id="risk-score-val" style="color:var(--primary);">—</div>
+          <div class="card-sub"><span id="risk-badge">Run calculator above</span></div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div class="card-title">Health Score</div>
+          <div class="card-value" id="health-score-val" style="color:var(--accent);">—</div>
+          <div class="card-sub">Out of 100</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div class="card-title">Risk Level</div>
+          <div class="card-value" id="risk-level-val" style="font-size:22px;">—</div>
+          <div class="card-sub" id="risk-color-label">—</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div class="card-title">Contributing Factors</div>
+          <div class="card-value" id="factors-count" style="color:var(--warning);">—</div>
+          <div class="card-sub">Identified risk factors</div>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="grid-2 fade-in" style="margin-bottom:24px;">
+        <div class="card">
+          <div class="card-title" style="margin-bottom:16px;">Health Score Gauge</div>
+          <div class="chart-wrap"><canvas id="gaugeChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:16px;">7-Day Risk Trend (Simulated)</div>
+          <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Risk factors + Recommendations -->
+      <div class="grid-2 fade-in" style="margin-bottom:24px;">
+        <div class="card">
+          <div class="section-title" style="font-size:16px;"><i class="fas fa-exclamation-circle"></i> Contributing
+            Factors</div>
+          <ul class="rec-list" id="factors-list">
+            <li><i class="fas fa-info-circle" style="color:var(--muted)"></i>Run the risk calculator to see your
+              factors.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="section-title" style="font-size:16px;"><i class="fas fa-lightbulb"></i> Recommendations</div>
+          <ul class="rec-list" id="recs-list">
+            <li><i class="fas fa-info-circle" style="color:var(--muted)"></i>Personalized recommendations will appear
+              here.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Quick links row -->
+      <div class="grid-3 fade-in">
+        <a href="/lifestyle" class="card" style="text-decoration:none;display:flex;align-items:center;gap:16px;">
+          <div
+            style="width:50px;height:50px;border-radius:50%;background:rgba(29,185,84,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fas fa-running" style="color:var(--primary);font-size:22px;"></i>
+          </div>
+          <div>
+            <div style="font-weight:700;margin-bottom:4px;">Lifestyle Tracker</div>
+            <div style="font-size:13px;color:var(--muted);">Log smoking, alcohol, activity & stress</div>
+          </div>
+          <i class="fas fa-arrow-right" style="margin-left:auto;color:var(--muted);"></i>
+        </a>
+        <a href="/diet" class="card" style="text-decoration:none;display:flex;align-items:center;gap:16px;">
+          <div
+            style="width:50px;height:50px;border-radius:50%;background:rgba(243,156,18,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fas fa-apple-alt" style="color:var(--warning);font-size:22px;"></i>
+          </div>
+          <div>
+            <div style="font-weight:700;margin-bottom:4px;">Diet Analysis</div>
+            <div style="font-size:13px;color:var(--muted);">Analyze your food for heart health</div>
+          </div>
+          <i class="fas fa-arrow-right" style="margin-left:auto;color:var(--muted);"></i>
+        </a>
+        <a href="/emergency" class="card"
+          style="text-decoration:none;display:flex;align-items:center;gap:16px;border-color:rgba(231,76,60,0.3);">
+          <div
+            style="width:50px;height:50px;border-radius:50%;background:rgba(231,76,60,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fas fa-ambulance" style="color:var(--danger);font-size:22px;"></i>
+          </div>
+          <div>
+            <div style="font-weight:700;margin-bottom:4px;">Emergency Response</div>
+            <div style="font-size:13px;color:var(--muted);">SOS + Bengaluru ambulance tracking</div>
+          </div>
+          <i class="fas fa-arrow-right" style="margin-left:auto;color:var(--muted);"></i>
+        </a>
+      </div>
+
+    </div><!-- /pg-content -->
+  </main>
+
+  <div class="pg-toast" id="pg-toast"></div>
+
+  <script src="/static/pulseguard.js"></script>
+  <script>
+    // Live clock
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('live-time').textContent = now.toLocaleTimeString('en-IN');
+    }
+    setInterval(updateClock, 1000); updateClock();
+
+    // Charts init
+    let gaugeChart, trendChart;
+
+    function initCharts(healthScore = 0) {
+      if (gaugeChart) gaugeChart.destroy();
+      if (trendChart) trendChart.destroy();
+
+      gaugeChart = new Chart(document.getElementById('gaugeChart'), {
+        type: 'doughnut',
+        data: {
+          datasets: [{
+            data: [healthScore, 100 - healthScore],
+            backgroundColor: [
+              healthScore > 70 ? '#1db954' : healthScore > 40 ? '#f39c12' : '#e74c3c',
+              '#1a1a2e'
+            ],
+            borderWidth: 0, borderRadius: 6
+          }]
+        },
+        options: {
+          cutout: '78%', plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false }
+          },
+          animation: { animateRotate: true, duration: 800 }
+        },
+        plugins: [{
+          id: 'center-text',
+          afterDraw(chart) {
+            const { ctx, chartArea: { top, left, width, height } } = chart;
+            ctx.save();
+            ctx.font = 'bold 32px Inter,sans-serif';
+            ctx.fillStyle = '#e6e6e6';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(healthScore, left + width / 2, top + height / 2 - 8);
+            ctx.font = '13px Inter,sans-serif';
+            ctx.fillStyle = '#888';
+            ctx.fillText('Health Score', left + width / 2, top + height / 2 + 18);
+            ctx.restore();
+          }
+        }]
+      });
+
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const scores = days.map(() => Math.max(0, healthScore + Math.floor(Math.random() * 20 - 10)));
+
+      trendChart = new Chart(document.getElementById('trendChart'), {
+        type: 'line',
+        data: {
+          labels: days,
+          datasets: [{
+            label: 'Health Score',
+            data: scores,
+            borderColor: '#1db954',
+            backgroundColor: 'rgba(29,185,84,0.08)',
+            borderWidth: 2.5,
+            pointBackgroundColor: '#1db954',
+            pointRadius: 4, fill: true, tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: '#222' }, ticks: { color: '#888' } },
+            y: { grid: { color: '#222' }, ticks: { color: '#888' }, min: 0, max: 100 }
+          }
+        }
+      });
+    }
+
+    async function calculateRisk() {
+      const payload = {
+        age: document.getElementById('d-age').value,
+        bmi: document.getElementById('d-bmi').value,
+        cholesterol: document.getElementById('d-cholesterol').value,
+        smoking: document.getElementById('d-smoking').value,
+        alcohol: document.getElementById('d-alcohol').value,
+        physical_activity: document.getElementById('d-physical').value,
+        hypertension: document.getElementById('d-hypertension').value,
+        diabetes: document.getElementById('d-diabetes').value,
+        family_history: document.getElementById('d-family').value,
+        sleep: document.getElementById('d-sleep').value
+      };
+
+      showToast('Calculating risk score…', '');
+      try {
+        const res = await fetch('/api/risk-score', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const d = await res.json();
+        if (d.error) { showToast('Error: ' + d.error, 'error'); return; }
+
+        document.getElementById('risk-score-val').textContent = d.score;
+        document.getElementById('risk-score-val').style.color = d.color;
+        document.getElementById('health-score-val').textContent = d.health_score;
+        document.getElementById('risk-level-val').textContent = d.level;
+        document.getElementById('risk-level-val').style.color = d.color;
+        document.getElementById('risk-color-label').textContent =
+          d.level === 'LOW' ? 'Keep it up! Great health' : d.level === 'MEDIUM' ? 'Take preventive action' : 'Seek medical attention';
+        document.getElementById('factors-count').textContent = d.factors.length;
+
+        // Factors list
+        const fl = document.getElementById('factors-list');
+        fl.innerHTML = d.factors.length ?
+          d.factors.map(f => `<li><i class="fas fa-exclamation-circle" style="color:var(--warning)"></i>${f}</li>`).join('')
+          : `<li><i class="fas fa-check-circle" style="color:var(--primary)"></i>No major risk factors identified</li>`;
+
+        // Recommendations list
+        const rl = document.getElementById('recs-list');
+        rl.innerHTML = d.recommendations.map(r => `<li><i class="fas fa-check-circle"></i>${r}</li>`).join('');
+
+        // badge
+        document.getElementById('risk-badge').innerHTML =
+          `<span class="badge badge-${d.level.toLowerCase()}">${d.level} RISK</span>`;
+
+        initCharts(d.health_score);
+        showToast('Risk score calculated!', 'success');
+      } catch (e) { showToast('Network error', 'error'); }
+    }
+
+    // Init blank charts
+    initCharts(0);
+
+    // ── Phone Steps (Health Connect) ─────────────────────────────────────
+    async function loadDashboardSteps() {
+      try {
+        const res = await fetch('/api/steps/today');
+        const d   = await res.json();
+        if (d.steps !== null && d.steps !== undefined) {
+          document.getElementById('db-steps').textContent = d.steps.toLocaleString();
+          const pct = Math.min(100, Math.round((d.steps / 8000) * 100));
+          document.getElementById('db-steps-bar').style.width = pct + '%';
+          const calStr  = d.calories   ? ` · ${Math.round(d.calories)} kcal` : '';
+          const hrStr   = d.heart_rate ? ` · ${d.heart_rate} bpm` : '';
+          const syncStr = d.synced_at  ? ` · synced ${new Date(d.synced_at).toLocaleTimeString()}` : '';
+          document.getElementById('db-steps-meta').textContent =
+            `${pct}% of 8,000 goal${calStr}${hrStr}${syncStr}`;
+        }
+      } catch (e) { /* silently ignore if phone not connected */ }
+    }
+    loadDashboardSteps();
+    setInterval(loadDashboardSteps, 60000);
+  </script>
+
+{% if current_user.is_authenticated %}
+<script src="/static/voice.js"></script>
+{% endif %}
+</body>
+
+
+</html>

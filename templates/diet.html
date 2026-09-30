@@ -1,0 +1,522 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>PulseGuard AI — Smart Diet Planner</title>
+  <meta name="description" content="AI-powered risk-tiered meal planning for cardiovascular health — personalised to your XGBoost cardiac risk score."/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="/static/pulseguard.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .risk-banner{display:flex;align-items:center;gap:16px;padding:18px 24px;border-radius:var(--radius-sm);border:1px solid var(--card-border);background:var(--darker);margin-bottom:24px;transition:background 0.5s,border-color 0.5s;}
+    .risk-badge{min-width:80px;padding:6px 14px;border-radius:20px;font-weight:800;font-size:13px;text-align:center;letter-spacing:1px;transition:background 0.4s,color 0.4s;}
+    .risk-score-ring{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex-shrink:0;border:3px solid transparent;transition:all 0.4s;}
+    .tier-tabs{display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;}
+    .tier-tab{padding:8px 20px;border-radius:20px;border:1px solid var(--card-border);background:var(--darker);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.25s;display:flex;align-items:center;gap:8px;}
+    .tier-tab:hover{border-color:var(--primary);color:var(--text);}
+    .tier-tab.active{color:#fff;}
+    .meals-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:24px;}
+    .meal-card{background:var(--darker);border-radius:var(--radius-sm);padding:20px;border:1px solid var(--card-border);transition:border-color 0.3s,transform 0.2s;}
+    .meal-card:hover{transform:translateY(-2px);}
+    .meal-emoji{font-size:28px;margin-bottom:10px;}
+    .meal-label{font-weight:700;font-size:14px;margin-bottom:12px;letter-spacing:.5px;}
+    .meal-items{list-style:none;margin:0 0 12px;padding:0;}
+    .meal-items li{font-size:13px;color:var(--muted);line-height:1.9;display:flex;gap:6px;}
+    .meal-items li i{color:var(--primary);flex-shrink:0;font-size:11px;line-height:inherit;margin-top:1px;}
+    .tier-tab .yours{font-size:10px;font-weight:700;letter-spacing:.5px;padding:1px 7px;border-radius:8px;border:1px solid currentColor;opacity:.85;}
+    .meal-note{font-size:11.5px;color:#888;font-style:italic;margin-bottom:12px;line-height:1.5;}
+    .meal-avoid{display:flex;flex-wrap:wrap;gap:5px;}
+    .avoid-chip{font-size:11px;padding:3px 10px;border-radius:10px;background:#e74c3c18;color:#e74c3c;border:1px solid #e74c3c33;}
+    .info-row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:24px;}
+    .info-pill{flex:1;min-width:180px;padding:14px 18px;border-radius:var(--radius-sm);background:var(--darker);border:1px solid var(--card-border);font-size:13px;display:flex;align-items:center;gap:12px;}
+    .info-pill i{font-size:18px;flex-shrink:0;}
+    .chip-grid{display:flex;flex-wrap:wrap;gap:8px;}
+    .sf-chip{padding:5px 13px;border-radius:12px;font-size:12px;font-weight:600;border:1px solid #1db95444;background:#1db95418;color:#1db954;transition:transform 0.15s;}
+    .sf-chip:hover{transform:scale(1.05);}
+    .av-chip{padding:5px 13px;border-radius:12px;font-size:12px;font-weight:600;border:1px solid #e74c3c44;background:#e74c3c18;color:#e74c3c;}
+    .food-result{padding:20px;border-radius:var(--radius-sm);border:2px solid var(--card-border);text-align:center;transition:border-color .3s;}
+    .food-category{font-size:20px;font-weight:800;margin:8px 0 4px;}
+    .food-calories{font-size:14px;color:var(--muted);margin-bottom:8px;}
+    .food-feedback{font-size:13px;line-height:1.6;margin-bottom:8px;}
+    .food-tip{font-size:12px;color:var(--muted);font-style:italic;}
+    .food-img-preview{width:100%;max-height:180px;object-fit:cover;border-radius:var(--radius-sm);margin-top:12px;display:none;}
+    @keyframes skeleton-pulse{0%,100%{opacity:.4}50%{opacity:1}}
+    .skel{background:var(--card-border);border-radius:4px;animation:skeleton-pulse 1.4s infinite;}
+    .plan-section{animation:fadeInUp .35s ease}
+    @keyframes fadeInUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  </style>
+</head>
+<body>
+
+<aside class="pg-sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <i class="fas fa-heartbeat logo-icon"></i>
+    <span class="logo-text">PulseGuard AI</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="/" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+    <a href="/dashboard" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+    <a href="/heartrate" class="nav-item"><i class="fas fa-heartbeat"></i><span>Heart Rate (PPG)</span></a>
+    <a href="/appointments" class="nav-item" style="color:#2ecc71;font-weight:600;"><i class="fas fa-video"></i><span>Doctor Video Call</span></a>
+    <a href="/doctor" class="nav-item" style="color:#3498db;font-weight:600;"><i class="fas fa-user-md"></i><span>Doctor Portal</span></a>
+    <a href="/reports" class="nav-item"><i class="fas fa-file-medical"></i><span>Reports &amp; Family</span></a>
+    <a href="/chat" class="nav-item"><i class="fas fa-robot"></i><span>AI Assistant</span></a>
+    <a href="/lifestyle" class="nav-item"><i class="fas fa-running"></i><span>Lifestyle</span></a>
+    <a href="/diet" class="nav-item active"><i class="fas fa-apple-alt"></i><span>Diet Planner</span></a>
+    <a href="/emergency" class="nav-item"><i class="fas fa-ambulance"></i><span>Emergency</span></a>
+    {% if current_user.is_authenticated %}
+    <a href="/logout" class="nav-item" style="color:#e74c3c;margin-top:14px;"><i class="fas fa-sign-out-alt"></i><span>Logout ({{ current_user.full_name.split()[0] }})</span></a>
+    {% else %}
+    <a href="/login" class="nav-item" style="color:#2ecc71;margin-top:14px;"><i class="fas fa-sign-in-alt"></i><span>Login</span></a>
+    <a href="/register" class="nav-item"><i class="fas fa-user-plus"></i><span>Register</span></a>
+    {% endif %}
+  </nav>
+  <a href="/emergency" class="sidebar-sos"><i class="fas fa-exclamation-triangle"></i><span>SOS Emergency</span></a>
+</aside>
+
+<main class="pg-main">
+  <header class="pg-header">
+    <div>
+      <h1>Smart Diet Planner</h1>
+      <div class="header-sub">Meal plans personalised to your XGBoost cardiac risk score</div>
+    </div>
+    <a href="/dashboard" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Dashboard</a>
+  </header>
+
+  <div class="pg-content">
+
+    <div class="risk-banner fade-in" id="risk-banner">
+      <div class="risk-score-ring" id="risk-ring">
+        <span id="risk-score-num">--</span>
+      </div>
+      <div style="flex:1;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+          <span style="font-weight:700;font-size:15px;" id="risk-label">Loading your cardiac risk profile...</span>
+          <span class="risk-badge" id="risk-badge">--</span>
+        </div>
+        <div style="font-size:13px;color:var(--muted);" id="risk-tagline">Analysing your health measurements...</div>
+        <div style="font-size:12px;color:#666;margin-top:4px;" id="risk-meta"></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a href="/#prediction" class="pg-btn pg-btn-primary" id="run-prediction-btn" style="font-size:12px;padding:6px 14px;display:none;text-decoration:none;">
+          <i class="fas fa-brain"></i> Run a prediction
+        </a>
+        <button class="pg-btn pg-btn-outline" style="font-size:12px;padding:6px 14px;" onclick="loadRiskProfile()">
+          <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+      </div>
+    </div>
+
+    <div class="tier-tabs fade-in" id="tier-tabs">
+      <button class="tier-tab" id="tab-LOW" onclick="switchTier('LOW')" style="border-color:#1db954;">
+        <i class="fas fa-shield-heart" style="color:#1db954;"></i> Low Risk
+      </button>
+      <button class="tier-tab" id="tab-MEDIUM" onclick="switchTier('MEDIUM')">
+        <i class="fas fa-triangle-exclamation" style="color:#f39c12;"></i> Moderate Risk
+      </button>
+      <button class="tier-tab" id="tab-HIGH" onclick="switchTier('HIGH')">
+        <i class="fas fa-heart-pulse" style="color:#e74c3c;"></i> High Risk
+      </button>
+      <span style="margin-left:auto;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;">
+        <i class="fas fa-info-circle"></i> <span id="tabs-hint">Your plan is selected automatically. Click a tier to preview its plan.</span>
+      </span>
+    </div>
+
+    <div id="meal-plan-section" class="plan-section">
+
+      <div class="info-row" id="info-row">
+        <div class="info-pill">
+          <i class="fas fa-fire" id="cal-icon" style="color:#f39c12;"></i>
+          <div><div style="font-size:11px;color:var(--muted);">DAILY TARGET</div><div style="font-weight:700;" id="info-calories">--</div></div>
+        </div>
+        <div class="info-pill">
+          <i class="fas fa-leaf" style="color:#1db954;"></i>
+          <div><div style="font-size:11px;color:var(--muted);">KEY PRINCIPLE</div><div style="font-weight:700;" id="info-principle">--</div></div>
+        </div>
+        <div class="info-pill">
+          <i class="fas fa-tint" style="color:#3498db;"></i>
+          <div><div style="font-size:11px;color:var(--muted);">HYDRATION</div><div style="font-weight:700;" id="info-hydration">--</div></div>
+        </div>
+      </div>
+
+      <div class="meals-grid" id="meals-grid">
+        <div class="meal-card"><div class="skel" style="height:120px;"></div></div>
+        <div class="meal-card"><div class="skel" style="height:120px;"></div></div>
+        <div class="meal-card"><div class="skel" style="height:120px;"></div></div>
+        <div class="meal-card"><div class="skel" style="height:120px;"></div></div>
+      </div>
+
+      <div class="grid-2 fade-in" style="margin-bottom:24px;">
+        <div class="card">
+          <div class="section-title" style="font-size:15px;"><i class="fas fa-star" style="color:#f39c12;"></i> Your Tier Superfoods</div>
+          <div class="chip-grid" id="superfoods-grid">
+            <div class="skel" style="height:28px;width:80px;border-radius:12px;"></div>
+            <div class="skel" style="height:28px;width:100px;border-radius:12px;"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-title" style="font-size:15px;"><i class="fas fa-ban" style="color:#e74c3c;"></i> Strictly Avoid</div>
+          <div class="chip-grid" id="avoid-grid">
+            <div class="skel" style="height:28px;width:80px;border-radius:12px;"></div>
+            <div class="skel" style="height:28px;width:90px;border-radius:12px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card fade-in" id="tip-card" style="margin-bottom:24px;display:flex;align-items:center;gap:16px;padding:18px 24px;">
+        <i class="fas fa-lightbulb" style="font-size:28px;color:#f39c12;flex-shrink:0;"></i>
+        <div>
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:4px;">WEEKLY TIP</div>
+          <div style="font-size:14px;" id="weekly-tip">--</div>
+        </div>
+      </div>
+
+    </div>
+
+    <hr style="border-color:var(--card-border);margin:8px 0 28px;"/>
+
+    <div class="section-title fade-in" style="margin-bottom:16px;">
+      <i class="fas fa-microscope"></i> Individual Food Analyzer
+    </div>
+    <div class="grid-2 fade-in" style="margin-bottom:24px;">
+      <div class="card">
+        <div class="section-title"><i class="fas fa-search"></i> Analyze Your Meal</div>
+        <div style="margin-bottom:20px;">
+          <label class="pg-label">Upload Food Photo (optional)</label>
+          <div id="drop-zone" style="border:2px dashed var(--card-border);border-radius:var(--radius-sm);padding:30px;text-align:center;cursor:pointer;transition:all 0.3s;position:relative;"
+               ondragover="event.preventDefault();this.style.borderColor='var(--primary)'"
+               ondragleave="this.style.borderColor='var(--card-border)'"
+               ondrop="handleDrop(event)">
+            <i class="fas fa-cloud-upload-alt" style="font-size:36px;color:var(--muted);display:block;margin-bottom:8px;"></i>
+            <div style="color:var(--muted);font-size:14px;">Drag &amp; drop or click to upload</div>
+            <input type="file" id="food-image" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;" onchange="previewImage(this)"/>
+          </div>
+          <img id="food-preview" class="food-img-preview" alt="Food preview"/>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label class="pg-label">Food Name / Description</label>
+          <input type="text" id="food-name" class="pg-input"
+                 placeholder="e.g., grilled chicken salad, samosa, pizza, oats..."
+                 onkeydown="if(event.key==='Enter')analyzeFood()"/>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px;">Type what you are eating or what the photo shows</div>
+        </div>
+        <button class="pg-btn pg-btn-primary" onclick="analyzeFood()" style="width:100%;" id="analyze-btn">
+          <i class="fas fa-microscope"></i> Analyze Food
+        </button>
+        <div style="margin-top:18px;">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Quick examples:</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <button class="pg-btn pg-btn-outline" style="padding:6px 14px;font-size:12px;border-radius:20px;" onclick="quickAnalyze('oats with fruits')">Oats</button>
+            <button class="pg-btn pg-btn-outline" style="padding:6px 14px;font-size:12px;border-radius:20px;" onclick="quickAnalyze('pizza')">Pizza</button>
+            <button class="pg-btn pg-btn-outline" style="padding:6px 14px;font-size:12px;border-radius:20px;" onclick="quickAnalyze('dal rice sabzi')">Dal Rice</button>
+            <button class="pg-btn pg-btn-outline" style="padding:6px 14px;font-size:12px;border-radius:20px;" onclick="quickAnalyze('burger with fries')">Burger+Fries</button>
+            <button class="pg-btn pg-btn-outline" style="padding:6px 14px;font-size:12px;border-radius:20px;" onclick="quickAnalyze('grilled chicken salad')">Chicken Salad</button>
+            <button class="pg-btn pg-btn-outline" style="padding:6px 14px;font-size:12px;border-radius:20px;" onclick="quickAnalyze('samosa')">Samosa</button>
+            <button class="pg-btn pg-btn-outline" style="padding:6px 14px;font-size:12px;border-radius:20px;" onclick="quickAnalyze('banana and apple')">Fruits</button>
+            <button class="pg-btn pg-btn-outline" style="padding:6px 14px;font-size:12px;border-radius:20px;" onclick="quickAnalyze('idli dosa')">Idli/Dosa</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" id="result-card" style="display:none;">
+          <div class="section-title"><i class="fas fa-poll"></i> Analysis Result</div>
+          <div class="food-result" id="food-result-box">
+            <div style="font-size:48px;" id="food-emoji">dish</div>
+            <div class="food-category" id="food-category">--</div>
+            <div class="food-calories" id="food-calories">--</div>
+            <div class="food-feedback" id="food-feedback">--</div>
+            <div class="food-tip" id="food-tip">--</div>
+          </div>
+          <div style="margin-top:20px;">
+            <div class="card-title" style="margin-bottom:12px;">Estimated Nutritional Impact</div>
+            <div style="position:relative;height:180px;"><canvas id="nutritionChart"></canvas></div>
+          </div>
+          <div style="margin-top:18px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;">
+              <span style="color:var(--muted);">Heart Impact</span>
+              <span id="heart-impact-label" style="font-weight:600;">--</span>
+            </div>
+            <div style="height:10px;background:var(--darker);border-radius:5px;overflow:hidden;">
+              <div id="heart-impact-bar" style="height:100%;border-radius:5px;width:0%;transition:width 0.7s ease,background 0.3s;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="result-placeholder" style="text-align:center;padding:60px 24px;">
+          <i class="fas fa-apple-alt" style="font-size:60px;color:var(--muted);display:block;margin-bottom:16px;"></i>
+          <div style="font-size:18px;font-weight:600;margin-bottom:8px;">No food analyzed yet</div>
+          <div style="color:var(--muted);font-size:14px;">Enter a food name or upload a photo and click Analyze</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<div class="pg-toast" id="pg-toast"></div>
+
+<script src="/static/pulseguard.js"></script>
+<script>
+var currentTier = 'LOW';   // tier whose plan is currently displayed
+var userTier = null;       // the user's own tier from their last XGBoost prediction (null = none yet)
+var TIER_COLORS = { LOW: '#1db954', MEDIUM: '#f39c12', HIGH: '#e74c3c' };
+var TIER_LABELS = { LOW: 'Low Risk', MEDIUM: 'Moderate Risk', HIGH: 'High Risk' };
+var NEUTRAL = '#888888';
+
+function paintBanner(color) {
+  var ring = document.getElementById('risk-ring');
+  ring.style.border = '3px solid ' + color;
+  ring.style.color = color;
+  ring.style.boxShadow = color === NEUTRAL ? 'none' : '0 0 16px ' + color + '44';
+  var badge = document.getElementById('risk-badge');
+  badge.style.background = color + '22';
+  badge.style.color = color;
+  badge.style.border = '1px solid ' + color + '55';
+  var banner = document.getElementById('risk-banner');
+  banner.style.borderColor = color + '55';
+  banner.style.background = 'linear-gradient(135deg,' + color + '0a,var(--darker))';
+}
+
+function markYourTab(tier) {
+  document.querySelectorAll('.tier-tab .yours').forEach(function(el) { el.remove(); });
+  var tab = tier && document.getElementById('tab-' + tier);
+  if (tab) tab.insertAdjacentHTML('beforeend', '<span class="yours">YOURS</span>');
+}
+
+async function loadRiskProfile() {
+  var runBtn = document.getElementById('run-prediction-btn');
+  try {
+    var res = await fetch('/api/diet/risk-profile');
+    if (!res.ok) throw new Error('Please log in to see your risk score.');
+    var d = await res.json();
+    if (d.error) throw new Error(d.error);
+
+    var metaParts = [];
+    if (d.age) metaParts.push('Age: ' + d.age);
+    if (d.bpm) metaParts.push('Latest BPM: ' + d.bpm + (d.bpm_abnormal ? ' (Abnormal)' : ''));
+
+    if (!d.has_prediction) {
+      // No saved XGBoost result: never show a made-up score
+      userTier = null;
+      paintBanner(NEUTRAL);
+      document.getElementById('risk-score-num').textContent = '--';
+      document.getElementById('risk-label').textContent = 'No risk score yet — run a prediction';
+      document.getElementById('risk-badge').textContent = 'NO SCORE';
+      document.getElementById('risk-tagline').textContent =
+        'Your diet plan is matched to your XGBoost cardiac risk prediction. Run one to get your personalised plan.';
+      document.getElementById('risk-meta').textContent = metaParts.join(' · ');
+      document.getElementById('tabs-hint').textContent = 'Previewing the Low Risk plan. Click a tier to compare plans.';
+      runBtn.style.display = '';
+      markYourTab(null);
+      activateTab('LOW');
+      await loadMealPlan('LOW');
+      return;
+    }
+
+    userTier = d.tier;
+    runBtn.style.display = 'none';
+    paintBanner(d.color);
+    document.getElementById('risk-score-num').textContent = d.score;
+    document.getElementById('risk-label').textContent = TIER_LABELS[d.tier] + ' — Your Personalised Plan';
+    document.getElementById('risk-badge').textContent = d.tier;
+    metaParts.unshift(d.source + ' prediction: ' + d.risk_level + ' · ' + d.predicted_at);
+    document.getElementById('risk-meta').textContent = metaParts.join(' · ');
+    document.getElementById('tabs-hint').textContent = 'Your plan is selected automatically. Click a tier to preview its plan.';
+    markYourTab(d.tier);
+    activateTab(d.tier);
+    var plan = await loadMealPlan(d.tier);
+    // The banner tagline always describes the user's own tier, never the previewed one
+    if (plan) document.getElementById('risk-tagline').textContent = plan.tagline;
+  } catch (e) {
+    userTier = null;
+    paintBanner(NEUTRAL);
+    document.getElementById('risk-score-num').textContent = '--';
+    document.getElementById('risk-badge').textContent = '--';
+    document.getElementById('risk-label').textContent = 'Could not load risk profile';
+    document.getElementById('risk-tagline').textContent = String(e.message || 'Please ensure you are logged in.');
+    markYourTab(null);
+    activateTab('LOW');
+    await loadMealPlan('LOW');
+  }
+}
+
+async function switchTier(tier) {
+  currentTier = tier;
+  activateTab(tier);
+  await loadMealPlan(tier);   // only the plan changes; the banner stays on the user's tier
+}
+
+function activateTab(tier) {
+  document.querySelectorAll('.tier-tab').forEach(function(t) {
+    t.classList.remove('active');
+    t.style.background = '';
+    t.style.borderColor = 'var(--card-border)';
+    t.style.color = 'var(--muted)';
+  });
+  var tab = document.getElementById('tab-' + tier);
+  if (tab) {
+    tab.classList.add('active');
+    tab.style.background = TIER_COLORS[tier] + '22';
+    tab.style.borderColor = TIER_COLORS[tier];
+    tab.style.color = TIER_COLORS[tier];
+  }
+}
+
+async function loadMealPlan(tier) {
+  showSkeletons();
+  try {
+    var res = await fetch('/api/diet/meal-plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tier: tier })
+    });
+    var d = await res.json();
+    if (d.error) throw new Error(d.error);
+    currentTier = tier;
+    renderPlan(d.plan);
+    return d.plan;
+  } catch (e) {
+    showToast('Could not load meal plan: ' + e.message, 'error');
+    return null;
+  }
+}
+
+function showSkeletons() {
+  document.getElementById('meals-grid').innerHTML =
+    '<div class="meal-card"><div class="skel" style="height:140px;"></div></div>' +
+    '<div class="meal-card"><div class="skel" style="height:140px;"></div></div>' +
+    '<div class="meal-card"><div class="skel" style="height:140px;"></div></div>' +
+    '<div class="meal-card"><div class="skel" style="height:140px;"></div></div>';
+  document.getElementById('superfoods-grid').innerHTML =
+    '<div class="skel" style="height:26px;width:80px;border-radius:12px;"></div>' +
+    '<div class="skel" style="height:26px;width:100px;border-radius:12px;"></div>';
+  document.getElementById('avoid-grid').innerHTML =
+    '<div class="skel" style="height:26px;width:90px;border-radius:12px;"></div>' +
+    '<div class="skel" style="height:26px;width:80px;border-radius:12px;"></div>';
+}
+
+function renderPlan(plan) {
+  var color = plan.color;
+  document.getElementById('info-calories').textContent = plan.daily_calories;
+  document.getElementById('info-principle').textContent = plan.key_principle;
+  document.getElementById('info-hydration').textContent = plan.hydration;
+  document.getElementById('cal-icon').style.color = color;
+
+  var mealOrder = ['breakfast', 'lunch', 'snack', 'dinner'];
+  var grid = document.getElementById('meals-grid');
+  grid.innerHTML = '';
+  mealOrder.forEach(function(key) {
+    var m = plan.meals[key];
+    if (!m) return;
+    var avoidHtml = (m.avoid || []).map(function(a) { return '<span class="avoid-chip">X ' + a + '</span>'; }).join('');
+    var itemsHtml = (m.items || []).map(function(i) { return '<li><i class="fas fa-check"></i><span>' + i + '</span></li>'; }).join('');
+    var card = document.createElement('div');
+    card.className = 'meal-card';
+    card.style.borderColor = color + '44';
+    card.innerHTML =
+      '<div class="meal-emoji">' + m.emoji + '</div>' +
+      '<div class="meal-label" style="color:' + color + ';">' + m.label + '</div>' +
+      '<ul class="meal-items">' + itemsHtml + '</ul>' +
+      '<div class="meal-note">Tip: ' + m.note + '</div>' +
+      '<div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Avoid:</div>' +
+      '<div class="meal-avoid">' + avoidHtml + '</div>';
+    grid.appendChild(card);
+  });
+
+  document.getElementById('superfoods-grid').innerHTML =
+    (plan.superfoods || []).map(function(s) { return '<span class="sf-chip">' + s + '</span>'; }).join('');
+  document.getElementById('avoid-grid').innerHTML =
+    (plan.strict_avoid || []).map(function(s) { return '<span class="av-chip">' + s + '</span>'; }).join('');
+  document.getElementById('weekly-tip').textContent = plan.weekly_tip;
+
+  var section = document.getElementById('meal-plan-section');
+  section.classList.remove('plan-section');
+  void section.offsetWidth;
+  section.classList.add('plan-section');
+}
+
+var nutritionChart;
+function previewImage(input) {
+  var file = input.files[0];
+  if (file) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var img = document.getElementById('food-preview');
+      img.src = e.target.result; img.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+}
+function handleDrop(event) {
+  event.preventDefault();
+  var file = event.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    document.getElementById('food-image').files = event.dataTransfer.files;
+    previewImage({ files: [file] });
+  }
+}
+function quickAnalyze(name) {
+  document.getElementById('food-name').value = name;
+  analyzeFood();
+}
+function getEmoji(category) {
+  if (category.includes('Healthy') || category.includes('Balanced')) return 'Salad';
+  if (category.includes('Junk')) return 'Pizza';
+  if (category.includes('High Fat')) return 'Cheese';
+  return 'Dish';
+}
+async function analyzeFood() {
+  var foodName = document.getElementById('food-name').value.trim();
+  if (!foodName) { showToast('Please enter a food name', 'error'); return; }
+  var btn = document.getElementById('analyze-btn');
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+  try {
+    var res = await fetch('/api/diet-analyze', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ food_name: foodName })
+    });
+    var d = await res.json();
+    if (d.error) { showToast('Analysis error', 'error'); return; }
+    document.getElementById('result-card').style.display = 'block';
+    document.getElementById('result-placeholder').style.display = 'none';
+    var box = document.getElementById('food-result-box');
+    box.style.borderColor = d.color;
+    document.getElementById('food-emoji').textContent = getEmoji(d.category);
+    document.getElementById('food-category').textContent = d.category;
+    document.getElementById('food-category').style.color = d.color;
+    document.getElementById('food-calories').textContent = 'approx ' + d.calories_estimate;
+    document.getElementById('food-feedback').textContent = d.feedback;
+    document.getElementById('food-tip').textContent = 'Tip: ' + d.heart_tip;
+    var impacts = { Positive: 85, Moderate: 50, Neutral: 45, Negative: 20 };
+    var impactColors = { Positive: '#1db954', Moderate: '#f39c12', Neutral: '#3498db', Negative: '#e74c3c' };
+    var pct = impacts[d.heart_impact] || 45;
+    document.getElementById('heart-impact-bar').style.width = pct + '%';
+    document.getElementById('heart-impact-bar').style.background = impactColors[d.heart_impact] || '#888';
+    document.getElementById('heart-impact-label').textContent = d.heart_impact;
+    document.getElementById('heart-impact-label').style.color = impactColors[d.heart_impact];
+    if (nutritionChart) nutritionChart.destroy();
+    var isJunk = d.category.includes('Junk');
+    var isHealthy = d.category.includes('Healthy') || d.category.includes('Balanced');
+    nutritionChart = new Chart(document.getElementById('nutritionChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Carbs', 'Protein', 'Fat', 'Fiber', 'Sugar', 'Sodium'],
+        datasets: [{ data: [isJunk?55:isHealthy?40:45, isHealthy?25:isJunk?12:18, isJunk?35:isHealthy?15:22, isHealthy?20:isJunk?5:10, isJunk?40:isHealthy?10:20, isJunk?70:isHealthy?20:40], backgroundColor: [d.color+'33'], borderColor: [d.color], borderWidth: 2, borderRadius: 4 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: '#222' }, ticks: { color: '#888', font: { size: 11 } } }, y: { grid: { color: '#222' }, ticks: { color: '#888' }, max: 100, title: { display: true, text: 'Relative %', color: '#888' } } } }
+    });
+    showToast('Food analyzed successfully!', 'success');
+  } catch (e) { showToast('Network error', 'error'); }
+  finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-microscope"></i> Analyze Food'; }
+}
+
+document.addEventListener('DOMContentLoaded', loadRiskProfile);
+</script>
+
+{% if current_user.is_authenticated %}
+<script src="/static/voice.js"></script>
+{% endif %}
+</body>
+</html>

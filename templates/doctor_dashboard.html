@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doctor Portal — PulseGuard AI</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="/static/pulseguard.css" />
+  <style>
+    .doc-card {
+      background: var(--card-bg, #0d0f17);
+      border: 1px solid var(--card-border, rgba(255, 255, 255, 0.08));
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .doc-card:hover {
+      border-color: rgba(255, 255, 255, 0.16);
+      transform: translateY(-2px);
+    }
+    .accept-btn {
+      padding: 10px 22px;
+      background: #2ecc71;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+      transition: all 0.2s;
+    }
+    .accept-btn:hover {
+      background: #27ae60;
+      transform: scale(1.02);
+    }
+    .join-btn {
+      padding: 10px 22px;
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 14px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+      transition: all 0.2s;
+    }
+    .join-btn:hover {
+      background: #2980b9;
+      transform: scale(1.02);
+    }
+    .section-label {
+      font-size: 18px;
+      font-weight: 800;
+      margin: 32px 0 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .patient-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2c3e50, #1a252f);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Standard Sidebar ─────────────────────────────────────────────── -->
+  <aside class="pg-sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <i class="fas fa-heartbeat logo-icon"></i>
+      <span class="logo-text">PulseGuard AI</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+      <a href="/dashboard" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+      <a href="/heartrate" class="nav-item"><i class="fas fa-heartbeat"></i><span>Heart Rate (PPG)</span></a>
+      <a href="/appointments" class="nav-item" style="color:#2ecc71;font-weight:600;"><i class="fas fa-video"></i><span>Doctor Video Call</span></a>
+      <a href="/doctor" class="nav-item active" style="color:#3498db;font-weight:600;"><i class="fas fa-user-md"></i><span>Doctor Portal</span></a>
+      <a href="/reports" class="nav-item"><i class="fas fa-file-medical"></i><span>Reports & Family</span></a>
+      <a href="/chat" class="nav-item"><i class="fas fa-robot"></i><span>AI Assistant</span></a>
+      <a href="/lifestyle" class="nav-item"><i class="fas fa-running"></i><span>Lifestyle</span></a>
+      <a href="/diet" class="nav-item"><i class="fas fa-apple-alt"></i><span>Diet Analysis</span></a>
+      <a href="/emergency" class="nav-item"><i class="fas fa-ambulance"></i><span>Emergency</span></a>
+    </nav>
+    <a href="/emergency" class="sidebar-sos"><i class="fas fa-exclamation-triangle"></i><span>SOS Emergency</span></a>
+  </aside>
+
+  <!-- ── Main Content ────────────────────────────────────────────────── -->
+  <main class="pg-main">
+    <header class="pg-header">
+      <div>
+        <h1 style="display:flex; align-items:center; gap:10px;">
+          <i class="fas fa-user-md" style="color:#3498db;"></i> Doctor Clinical Portal
+        </h1>
+        <div class="header-sub">Dr. Jayanth Gowda &bull; Live Telecardiology & Triage Dashboard</div>
+      </div>
+      <div>
+        <a href="/appointments" class="action-btn btn-subtle" style="font-size:13px; text-decoration:none; padding:8px 16px; border-radius:8px; background:rgba(255,255,255,0.06); color:#fff; display:inline-flex; align-items:center; gap:6px;">
+          <i class="fas fa-arrow-left"></i> Patient View
+        </a>
+      </div>
+    </header>
+
+    <div class="pg-content">
+
+      <div class="section-label">
+        <i class="fas fa-clock" style="color: #f39c12;"></i> Pending Consultations Awaiting Review ({{ pending | length }})
+      </div>
+
+      {% if pending %}
+        {% for a in pending %}
+        <div class="doc-card" style="border-left: 4px solid #f39c12;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <div style="display:flex; align-items:center; gap:16px;">
+              <div class="patient-avatar">
+                {{ a.patient.full_name[:2].upper() }}
+              </div>
+              <div>
+                <div style="font-weight: 700; font-size: 17px; color:#fff;">
+                  {{ a.patient.full_name }}
+                  <span style="font-size: 13px; font-weight: normal; color: var(--muted); margin-left: 8px;">
+                    ({{ a.patient.age }} yrs &bull; {{ a.patient.gender }})
+                  </span>
+                </div>
+                <div style="font-size: 13px; color: var(--muted); margin-top: 4px;">
+                  <i class="fas fa-phone"></i> {{ a.patient.phone }} &bull; <i class="fas fa-envelope"></i> {{ a.patient.email }}
+                </div>
+                <div style="font-size: 14px; margin-top: 8px;">
+                  <span style="background: rgba(231,76,60,0.15); color: #e74c3c; border: 1px solid rgba(231,76,60,0.3); padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 12px;">
+                    Abnormal HR: {{ a.trigger_bpm | round }} BPM
+                  </span>
+                  <span style="font-size: 12px; color: var(--muted); margin-left: 8px;">
+                    <i class="far fa-clock"></i> {{ a.created_at.strftime('%d %b %Y, %I:%M %p') }}
+                  </span>
+                </div>
+                <div style="font-size: 13px; color: #ccc; margin-top: 6px;">{{ a.notes }}</div>
+              </div>
+            </div>
+            <div>
+              <button class="accept-btn" onclick="acceptAppt({{ a.id }})">
+                <i class="fas fa-check"></i> Accept & Open Video
+              </button>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="text-align: center; padding: 40px; color: var(--muted); background: var(--card-bg, #0d0f17); border-radius: 14px; border: 1px dashed rgba(255,255,255,0.08);">
+          <i class="fas fa-check-circle" style="font-size: 38px; color: #2ecc71; margin-bottom: 10px; display: block;"></i>
+          No pending consultations at this moment.
+        </div>
+      {% endif %}
+
+      <div class="section-label">
+        <i class="fas fa-video" style="color: #2ecc71;"></i> Accepted Consultations — Ready for Call ({{ accepted | length }})
+      </div>
+
+      {% if accepted %}
+        {% for a in accepted %}
+        <div class="doc-card" style="border-left: 4px solid #2ecc71;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <div style="display:flex; align-items:center; gap:16px;">
+              <div class="patient-avatar" style="background:linear-gradient(135deg, #1b4d3e, #0e2a22);">
+                {{ a.patient.full_name[:2].upper() }}
+              </div>
+              <div>
+                <div style="font-weight: 700; font-size: 17px; color:#fff;">
+                  {{ a.patient.full_name }}
+                  <span style="background:rgba(46,204,113,0.15); color:#2ecc71; font-size:11px; font-weight:800; padding:2px 8px; border-radius:10px; margin-left:8px;">ACTIVE</span>
+                </div>
+                <div style="font-size: 13px; color: var(--muted); margin-top: 4px;">
+                  Heart Rate: <strong style="color: #e74c3c;">{{ a.trigger_bpm | round }} BPM</strong> &bull; Accepted on {{ a.created_at.strftime('%I:%M %p') }}
+                </div>
+              </div>
+            </div>
+            <div>
+              <a href="/videochat/{{ a.room_id }}?role=doctor" class="join-btn">
+                <i class="fas fa-video"></i> Join Live Video Call
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="text-align: center; padding: 40px; color: var(--muted); background: var(--card-bg, #0d0f17); border-radius: 14px; border: 1px dashed rgba(255,255,255,0.08);">
+          No active video sessions currently running.
+        </div>
+      {% endif %}
+
+    </div>
+  </main>
+
+  <script>
+  function acceptAppt(id) {
+      fetch(`/api/appointments/${id}/accept`, {method: 'POST'})
+          .then(r => r.json())
+          .then(data => {
+              if (data.room_id) {
+                  window.location.href = `/videochat/${data.room_id}?role=doctor`;
+              } else {
+                  location.reload();
+              }
+          });
+  }
+  </script>
+</body>
+</html>

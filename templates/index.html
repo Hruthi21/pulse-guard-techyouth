@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PulseGuard AI — PulseGuard | Predict. Prevent. Protect.</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+
+<body>
+    <!-- NAVBAR -->
+  <nav class="navbar" style="background: rgba(10, 10, 15, 0.95); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding: 10px 0;">
+    <div class="container navbar-content" style="max-width: 1440px; width: 95%; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
+      <a href="#home" class="logo" style="text-decoration: none; display: flex; align-items: center; gap: 10px;">
+        <i class="fas fa-heartbeat" style="color: var(--primary, #1db954); font-size: 26px;"></i>
+        <span style="font-weight: 800; font-size: 22px; background: linear-gradient(90deg, #1db954 0%, #2ecc71 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">PulseGuard AI</span>
+      </a>
+
+      <div class="nav-links" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <a href="#home" class="active" style="padding: 6px 10px; font-size: 13.5px; font-weight: 600;"><i class="fas fa-home"></i> Home</a>
+        <a href="/dashboard" style="color: #1db954; font-weight: 700; padding: 6px 10px; font-size: 13.5px;"><i class="fas fa-chart-line"></i> Dashboard</a>
+        <a href="/heartrate" style="padding: 6px 10px; font-size: 13.5px;"><i class="fas fa-heartbeat"></i> Heart Rate (PPG)</a>
+        <a href="#wearable-showcase" style="color: #46f0a0; font-weight: 700; padding: 6px 10px; font-size: 13.5px;"><i class="fas fa-cube"></i> Wearable 3D</a>
+        <a href="/appointments" style="color: #2ecc71; font-weight: 700; padding: 6px 10px; font-size: 13.5px;"><i class="fas fa-video"></i> Video Consult</a>
+        <a href="/doctor" style="color: #3498db; font-weight: 700; padding: 6px 10px; font-size: 13.5px;"><i class="fas fa-user-md"></i> Doctor Portal</a>
+        <a href="/reports" style="padding: 6px 10px; font-size: 13.5px;"><i class="fas fa-file-medical"></i> Reports</a>
+        <a href="/chat" style="padding: 6px 10px; font-size: 13.5px;"><i class="fas fa-robot"></i> AI Chat</a>
+        
+        <a href="/emergency" style="background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff !important; font-weight: 800; padding: 7px 14px; border-radius: 20px; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 10px rgba(231,76,60,0.4); margin: 0 4px;">
+          <i class="fas fa-ambulance"></i> 🚨 SOS Emergency
+        </a>
+
+        {% if current_user.is_authenticated %}
+        <a href="/logout" style="color: #e74c3c; border: 1px solid rgba(231,76,60,0.4); padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none;">
+          <i class="fas fa-sign-out-alt"></i> Logout ({{ current_user.full_name.split()[0] }})
+        </a>
+        {% else %}
+        <a href="/login" style="color: var(--primary, #1db954); font-weight: 700; border: 1px solid var(--primary, #1db954); padding: 6px 12px; border-radius: 6px; font-size: 13px; text-decoration: none;">
+          <i class="fas fa-sign-in-alt"></i> Login
+        </a>
+        <a href="/register" style="color: #fff; background: var(--primary, #1db954); font-weight: 700; padding: 6px 14px; border-radius: 6px; font-size: 13px; text-decoration: none;">
+          <i class="fas fa-user-plus"></i> Register
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO SECTION -->
+  <section class="hero" id="home">
+    <div class="hero-bg"></div>
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-text">
+          <h1>AI-Powered <span>Heart Disease</span> Prediction System</h1>
+          <p>PulseGuard AI uses advanced machine learning algorithms to predict your risk of heart disease based on key
+            health indicators. Get personalized insights, recommendations, and take control of your heart health today.
+          </p>
+          <div id="navbar" class="hero-buttons">
+            <button class="btn btn-primary" onclick="location.href='#prediction'">
+              <i class="fas fa-calculator"></i>
+              Start Prediction
+            </button>
+            <button class="btn btn-outline" onclick="location.href='#features'">
+              <i class="fas fa-info-circle"></i>
+              Learn More
+            </button>
+          </div>
+        </div>
+        <div class="hero-image">
+          <img src="static\images\istockphoto-1126458889-612x612-removebg-preview.png" alt="Heart Health Visualization">
+          <div class="pulse-circle"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES SECTION -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header">
+        <h2>Our Features</h2>
+        <p>PulseGuard AI offers a comprehensive set of features to help you understand and manage your heart health
+          effectively.</p>
+      </div>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-heartbeat"></i>
+          </div>
+          <h3>AI-Powered Prediction</h3>
+          <p>Our advanced XGBoost machine learning model analyzes your health parameters to predict heart disease risk
+            with high accuracy.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-robot"></i>
+          </div>
+          <h3>AI Health Assistant</h3>
+          <p>Get personalized guidance and answers to your health questions from our intelligent AI chatbot.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-file-pdf"></i>
+          </div>
+          <h3>PDF Reports</h3>
+          <p>Download comprehensive PDF reports of your heart health analysis to share with your healthcare provider.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <h3>Risk Assessment</h3>
+          <p>Receive a detailed risk score and visualization of your heart disease probability based on personal health
+            data.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-apple-alt"></i>
+          </div>
+          <h3>Lifestyle Recommendations</h3>
+          <p>Get personalized diet, exercise, and habit modification suggestions to improve your heart health.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PULSEGUARD WEAR 3D SHOWCASE SECTION ============ -->
+  <section id="wearable-showcase" class="wearable-showcase-section">
+    <style>
+      :root{
+        --pgw-bg:#0a0f12; --pgw-surface:#10171b; --pgw-surface-2:#161f24; --pgw-line:#223038; --pgw-fg:#e8eef0; --pgw-muted:#8b9ba2;
+        --pulse:#ff4d5e; --ok:#3ddc97; --warn:#ffb547; --sensor:#46f0a0;
+        --display:'Chakra Petch','Segoe UI',system-ui,sans-serif;
+        --body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+        --mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+      }
+      #wearable-showcase {
+        background: var(--pgw-bg);
+        color: var(--pgw-fg);
+        font-family: var(--body);
+        font-size: 15px;
+        line-height: 1.5;
+        border-top: 1px solid var(--pgw-line);
+        border-bottom: 1px solid var(--pgw-line);
+        padding: 80px 20px;
+        position: relative;
+      }
+      #wearable-showcase * { box-sizing: border-box; }
+      .pgw-header {
+        max-width: 1280px;
+        margin: 0 auto 36px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+      }
+      .pgw-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(70, 240, 160, 0.1);
+        border: 1px solid rgba(70, 240, 160, 0.35);
+        color: var(--sensor);
+        padding: 6px 16px;
+        border-radius: 999px;
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+      .pgw-title {
+        font-family: var(--display);
+        font-weight: 700;
+        font-size: clamp(32px, 4.5vw, 54px);
+        line-height: 1.05;
+        margin: 0;
+        letter-spacing: .01em;
+        background: linear-gradient(135deg, #ffffff 40%, #a4b3b8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .pgw-lede {
+        color: var(--pgw-muted);
+        max-width: 68ch;
+        margin: 0;
+        font-size: 16.5px;
+      }
+      .pgw-nav-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 10px;
+      }
+      .pgw-nav-btn {
+        background: var(--pgw-surface);
+        color: var(--pgw-fg);
+        border: 1px solid var(--pgw-line);
+        border-radius: 10px;
+        padding: 10px 18px;
+        font-family: var(--body);
+        font-weight: 600;
+        font-size: 13.5px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all .2s ease;
+      }
+      .pgw-nav-btn:hover {
+        border-color: var(--sensor);
+        color: var(--sensor);
+        background: rgba(70, 240, 160, 0.08);
+        transform: translateY(-1px);
+      }
+      .pgw-nav-btn.primary {
+        background: linear-gradient(135deg, #1db954, #1aa34a);
+        color: #fff;
+        border-color: #1db954;
+        box-shadow: 0 4px 15px rgba(29, 185, 84, 0.3);
+      }
+      .pgw-nav-btn.primary:hover {
+        background: #1ed760;
+        color: #0b0c10;
+        border-color: #1ed760;
+      }
+
+      /* LIVE 3D SECTION */
+      #live .app{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+      #live .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--pulse);margin:0 0 6px}
+      #live h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,3.8vw,44px);line-height:1.1;margin:0;letter-spacing:.01em}
+      #live .lede{color:var(--pgw-muted);max-width:64ch;margin:8px 0 0;font-size:15px}
+      #live .grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+      @media (max-width:920px){
+        #live .grid{grid-template-columns:minmax(0,1fr)}
+      }
+      #live .col{display:flex;flex-direction:column;gap:14px;min-width:0}
+      #live .stage{position:relative;height:clamp(380px,64vh,640px);border:1px solid var(--pgw-line);border-radius:16px;overflow:hidden;cursor:grab;touch-action:pan-y;
+        background:
+          repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 40px),
+          repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 40px),
+          radial-gradient(ellipse at 50% 36%,#1b282e 0%,#0e1518 58%,#0a0f12 100%);}
+      #live .stage:active{cursor:grabbing}
+      #live .stage canvas{display:block;width:100%;height:100%}
+      #live .stage-meta{position:absolute;left:14px;right:14px;bottom:12px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-family:var(--mono);font-size:11.5px;color:var(--pgw-muted);pointer-events:none}
+      #live .stage-tag{position:absolute;top:12px;left:14px;font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--pgw-muted);pointer-events:none}
+      #live .readout{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+      @media (max-width:560px){
+        #live .readout{grid-template-columns:repeat(2,minmax(0,1fr))}
+      }
+      #live .tile{background:var(--pgw-surface);border:1px solid var(--pgw-line);border-radius:12px;padding:12px 14px;min-width:0}
+      #live .tile .k{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--pgw-muted)}
+      #live .tile .v{font-family:var(--display);font-weight:600;font-size:28px;line-height:1.15;font-variant-numeric:tabular-nums;margin-top:2px}
+      #live .tile .v small{font-family:var(--mono);font-size:12px;color:var(--pgw-muted);font-weight:400;margin-left:4px}
+      #live .pill{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:13px;font-weight:500;padding:4px 10px;border-radius:999px;margin-top:6px;border:1px solid currentColor}
+      #live .pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+      #live .panel{background:var(--pgw-surface);border:1px solid var(--pgw-line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:18px}
+      #live .group{display:flex;flex-direction:column;gap:8px}
+      #live .label{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--pgw-muted);display:flex;justify-content:space-between;gap:8px}
+      #live .seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:3px;background:var(--pgw-bg);border:1px solid var(--pgw-line);border-radius:10px;padding:3px}
+      #live .seg button{font:500 13px var(--body);color:var(--pgw-muted);background:transparent;border:0;border-radius:7px;padding:8px 4px;cursor:pointer}
+      #live .seg button:hover{color:var(--pgw-fg)}
+      #live .seg button[aria-pressed="true"]{background:var(--pgw-fg);color:var(--pgw-bg)}
+      #live .scen{display:flex;flex-direction:column;gap:6px}
+      #live .scen button{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 10px;text-align:left;background:var(--pgw-bg);color:var(--pgw-fg);border:1px solid var(--pgw-line);border-radius:10px;padding:9px 12px;cursor:pointer;font:500 14px var(--body)}
+      #live .scen button span{font-family:var(--mono);font-size:12.5px;color:var(--pgw-muted);font-variant-numeric:tabular-nums}
+      #live .scen button em{grid-column:1/-1;font-style:normal;font-size:12.5px;color:var(--pgw-muted);font-weight:400}
+      #live .scen button:hover{border-color:#35464f}
+      #live .scen button[aria-pressed="true"]{border-color:var(--pgw-fg);background:var(--pgw-surface-2)}
+      #live .scen button.danger[aria-pressed="true"]{border-color:var(--pulse)}
+      #live .swatches{display:flex;gap:8px;flex-wrap:wrap}
+      #live .sw{width:30px;height:30px;border-radius:50%;border:2px solid var(--pgw-bg);outline:1px solid var(--pgw-line);cursor:pointer;padding:0}
+      #live .sw[aria-pressed="true"]{outline:2px solid var(--pgw-fg);outline-offset:1px}
+      #live .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+      #live .btn{font:600 13.5px var(--body);border-radius:10px;padding:10px 14px;cursor:pointer;border:1px solid var(--pgw-line);background:var(--pgw-bg);color:var(--pgw-fg)}
+      #live .btn.sos{background:var(--pulse);border-color:var(--pulse);color:#1a0306;flex:1}
+      #live .btn:disabled{opacity:.45;cursor:not-allowed}
+      #live .toggle{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--pgw-muted);cursor:pointer}
+      #live .toggle input{accent-color:var(--pulse);width:16px;height:16px}
+      #live button:focus-visible,#live input:focus-visible{outline:2px solid var(--pulse);outline-offset:2px}
+      #live .log{background:var(--pgw-surface);border:1px solid var(--pgw-line);border-radius:12px;padding:12px 14px;min-width:0}
+      #live .log ol{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:190px;overflow:auto}
+      #live .log li{display:grid;grid-template-columns:62px 1fr;gap:10px;font-size:13.5px}
+      #live .log time{font-family:var(--mono);font-size:12px;color:var(--pgw-muted);font-variant-numeric:tabular-nums;padding-top:1px}
+      #live .log li.alert{color:var(--pulse)}
+      #live .log li.good{color:var(--ok)}
+      #live .below{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px}
+      @media (max-width:920px){
+        #live .below{grid-template-columns:minmax(0,1fr)}
+      }
+      #live .card{background:var(--pgw-surface);border:1px solid var(--pgw-line);border-radius:16px;padding:18px;min-width:0}
+      #live .card h2{font-family:var(--display);font-weight:600;font-size:20px;margin:0 0 12px;letter-spacing:.01em;color:var(--pgw-fg)}
+      #live .spec{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin:0}
+      #live .spec dt{font-family:var(--mono);font-size:12.5px;color:var(--sensor);white-space:nowrap}
+      #live .spec dd{margin:0;color:var(--pgw-muted);font-size:14px}
+      #live .flow{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap}
+      #live .node{flex:1 1 110px;background:var(--pgw-bg);border:1px solid var(--pgw-line);border-radius:10px;padding:10px 12px;min-width:0}
+      #live .node b{display:block;font-family:var(--display);font-weight:600;font-size:15px;color:var(--pgw-fg)}
+      #live .node span{font-size:12.5px;color:var(--pgw-muted)}
+      #live .arrow{align-self:center;color:var(--pgw-muted);font-family:var(--mono)}
+      #live .note{font-size:12.5px;color:var(--pgw-muted);margin:12px 0 0}
+
+      /* TEARDOWN SECTION */
+      #td{margin-top:64px;padding-top:40px;border-top:1px solid var(--pgw-line)}
+      #td .wrap{max-width:1320px;margin:0 auto}
+      #td .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--pulse);margin:0 0 6px}
+      #td h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,3.8vw,44px);line-height:1.1;margin:0;text-wrap:balance;color:var(--pgw-fg)}
+      #td .lede{color:var(--pgw-muted);max-width:62ch;margin:8px 0 0;font-size:15px}
+      #td .head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:18px}
+      #td .seg{display:inline-grid;grid-auto-flow:column;gap:3px;background:var(--pgw-surface);border:1px solid var(--pgw-line);border-radius:10px;padding:3px}
+      #td .seg button{font:500 13.5px var(--body);color:var(--pgw-muted);background:transparent;border:0;border-radius:7px;padding:8px 18px;cursor:pointer}
+      #td .seg button[aria-pressed="true"]{background:var(--pgw-fg);color:var(--pgw-bg)}
+      #td button:focus-visible{outline:2px solid var(--pulse);outline-offset:2px}
+      #td .scrolly{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:28px;position:relative}
+      #td .stage{position:sticky;top:70px;height:85vh;height:85dvh;grid-column:2;grid-row:1;border:1px solid var(--pgw-line);border-radius:18px;overflow:hidden;cursor:grab;touch-action:pan-y;
+        background:repeating-linear-gradient(0deg,rgba(255,255,255,.022) 0 1px,transparent 1px 44px),repeating-linear-gradient(90deg,rgba(255,255,255,.022) 0 1px,transparent 1px 44px),radial-gradient(ellipse at 50% 40%,#1b282e 0%,#0e1518 60%,#0a0f12 100%)}
+      #td .stage:active{cursor:grabbing}
+      #td .stage canvas{display:block;width:100%;height:100%}
+      #td .overlay{position:absolute;inset:0;pointer-events:none}
+      #td .overlay svg{position:absolute;inset:0;width:100%;height:100%}
+      #td .lbl{position:absolute;left:0;top:0;white-space:nowrap;font-family:var(--mono);font-size:12px;color:var(--pgw-muted);transition:color .2s}
+      #td .lbl b{font-family:var(--display);font-weight:600;font-size:14px;color:var(--pgw-fg);margin-right:6px}
+      #td .lbl .sub{display:block;padding-left:26px;font-size:11.5px;line-height:1.3}
+      #td .lbl{line-height:1.25}
+      #td .lbl .n{color:var(--pulse);margin-right:6px}
+      #td .lbl.on b{color:var(--pulse)}
+      #td .hud{position:absolute;left:14px;right:14px;top:12px;display:flex;justify-content:space-between;gap:10px;font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--pgw-muted);pointer-events:none}
+      #td .bar{position:absolute;left:14px;right:14px;bottom:14px;height:3px;background:var(--pgw-line);border-radius:3px;overflow:hidden;pointer-events:none}
+      #td .bar i{display:block;height:100%;width:0;background:var(--pulse)}
+      #td .steps{grid-column:1;grid-row:1;display:flex;flex-direction:column}
+      #td .step{min-height:85vh;display:flex;align-items:center}
+      #td .step:first-child{min-height:70vh;align-items:flex-start;padding-top:14vh}
+      #td .step:last-child{min-height:90vh}
+      #td .card{background:var(--pgw-surface);border:1px solid var(--pgw-line);border-radius:14px;padding:18px 20px;opacity:.45;transition:opacity .3s,border-color .3s;width:100%}
+      #td .step.active .card{opacity:1;border-color:#3a4c55}
+      #td .card .k{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--pulse)}
+      #td .card h2{font-family:var(--display);font-weight:600;font-size:24px;line-height:1.15;margin:6px 0 8px;color:var(--pgw-fg)}
+      #td .card p{margin:0;color:#c3ced2}
+      #td .card dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:12px 0 0;font-size:13.5px}
+      #td .card dt{font-family:var(--mono);font-size:12px;color:var(--pgw-muted);padding-top:1px}
+      #td .card dd{margin:0;color:var(--pgw-fg)}
+      #td .link{margin-top:12px;padding-top:10px;border-top:1px dashed var(--pgw-line);font-size:13.5px;color:var(--pgw-muted)}
+      #td .link strong{color:var(--sensor);font-weight:500}
+      @media (max-width:860px){
+        #td .scrolly{grid-template-columns:minmax(0,1fr);gap:0}
+        #td .stage{grid-column:1;height:56vh;height:56dvh;z-index:2;border-radius:14px;top:10px}
+        #td .steps{grid-column:1;grid-row:2}
+        #td .step,#td .step:first-child{min-height:70vh;align-items:flex-start;padding-top:0}
+        #td .step:first-child{padding-top:4vh}
+        #td .card{opacity:1}
+      }
+      #td .specs{margin-top:40px;background:var(--pgw-surface);border:1px solid var(--pgw-line);border-radius:16px;padding:20px}
+      #td .specs h2{font-family:var(--display);font-weight:600;font-size:22px;margin:0 0 4px;color:var(--pgw-fg)}
+      #td .specs p{color:var(--pgw-muted);margin:0 0 14px;font-size:14px}
+      #td .tbl{overflow-x:auto}
+      #td table{width:100%;border-collapse:collapse;font-size:14px;min-width:560px}
+      #td th,#td td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--pgw-line);color:var(--pgw-fg)}
+      #td th{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--pgw-muted);font-weight:500}
+      #td td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+      #td th.num{text-align:right}
+      #td td.n{font-family:var(--mono);color:var(--pulse);width:40px}
+      #td tfoot td{font-weight:600;border-bottom:0}
+    </style>
+
+    <div class="pgw-header">
+      <div class="pgw-badge"><i class="fas fa-microchip"></i> Hardware Innovation · 3D Bio-Sensing Lab</div>
+      <h2 class="pgw-title">PulseGuard Wear: 3D Studio &amp; Teardown</h2>
+      <p class="pgw-lede">Interact directly with our next-generation optical cardiovascular wearable. Spin in 3D, simulate resting vs. tachycardic rhythms, test motion-gated auto-alerts, and take the device apart layer by layer.</p>
+      
+      <div class="pgw-nav-actions">
+        <a href="#live" class="pgw-nav-btn"><i class="fas fa-eye"></i> Live 3D Model</a>
+        <a href="#td" class="pgw-nav-btn"><i class="fas fa-layer-group"></i> 9-Layer Teardown</a>
+        <a href="/wearable" class="pgw-nav-btn primary" target="_blank"><i class="fas fa-external-link-alt"></i> Open Fullscreen 3D Lab</a>
+      </div>
+    </div>
+
+    <!-- ============ 1. LIVE 3D MODEL ============ -->
+    <div id="live">
+      <div class="app">
+        <header>
+          <p class="eyebrow">PulseGuard AI · wearable concept</p>
+          <h1>PulseGuard Wear</h1>
+          <p class="lede">A 3D model of the band that feeds the PulseGuard app: continuous PPG heart rate, alerts that know the difference between a workout and a problem, and one-press SOS. Every reading below is simulated in real time.</p>
+        </header>
+
+        <main class="grid">
+          <div class="col">
+            <div id="stage" class="stage" role="img" aria-label="Interactive 3D model of the PulseGuard Wear device">
+              <div class="stage-tag" id="stageTag">Watch · Graphite</div>
+              <div class="stage-meta"><span id="dims">44 × 38 mm case · 10.7 mm thick</span><span>Drag to rotate · scroll to zoom · Sensors view fades the strap</span></div>
+            </div>
+            <div class="readout">
+              <div class="tile"><div class="k">Heart rate</div><div class="v"><span id="rBpm">72</span><small>BPM</small></div></div>
+              <div class="tile"><div class="k">Signal quality</div><div class="v"><span id="rSqi">94</span><small>%</small></div></div>
+              <div class="tile"><div class="k">Risk score</div><div class="v"><span id="rRisk">34</span><small>/ 100</small></div></div>
+              <div class="tile"><div class="k">Status</div><div id="rStatus" class="pill" style="color:var(--ok)">Normal</div></div>
+            </div>
+            <div class="log">
+              <div class="label"><span>Device events</span><span>simulated</span></div>
+              <ol id="log" aria-live="polite"></ol>
+            </div>
+          </div>
+
+          <aside class="panel" aria-label="Device controls">
+            <div class="group">
+              <div class="label">Form factor</div>
+              <div class="seg" id="segForm">
+                <button id="fWatch" data-v="watch" aria-pressed="true">Watch</button>
+                <button id="fBand" data-v="band" aria-pressed="false">Band</button>
+              </div>
+            </div>
+            <div class="group">
+              <div class="label">Screen</div>
+              <div class="seg" id="segScreen">
+                <button id="sHeart" data-v="heart" aria-pressed="true">Heart</button>
+                <button id="sRisk" data-v="risk" aria-pressed="false">Risk</button>
+                <button id="sTrend" data-v="trend" aria-pressed="false">7-day</button>
+                <button id="sSos" data-v="sos" aria-pressed="false">SOS</button>
+              </div>
+            </div>
+            <div class="group">
+              <div class="label"><span>Scenario</span><span>motion</span></div>
+              <div class="scen" id="scen">
+                <button id="cRest" data-v="rest" aria-pressed="true">Resting <span>72 BPM · still</span><em>Normal sinus rhythm at the desk.</em></button>
+                <button id="cWalk" data-v="walk" aria-pressed="false">Brisk walk <span>104 BPM · moving</span><em>Elevated, explained by steps.</em></button>
+                <button id="cRun" data-v="run" aria-pressed="false">Workout <span>146 BPM · moving</span><em>Logged as exercise. No alert.</em></button>
+                <button id="cTachy" data-v="tachy" class="danger" aria-pressed="false">Tachycardia at rest <span>197 BPM · still</span><em>Sustained high rate with no motion. Triggers the doctor flow.</em></button>
+              </div>
+            </div>
+            <div class="group">
+              <div class="label">Case</div>
+              <div class="swatches" id="swCase"></div>
+              <div class="label" style="margin-top:6px">Strap</div>
+              <div class="swatches" id="swStrap"></div>
+            </div>
+            <div class="group">
+              <div class="label">View</div>
+              <div class="seg" id="segView">
+                <button id="vFront" data-v="front" aria-pressed="false">Front</button>
+                <button id="vSide" data-v="side" aria-pressed="false">Side</button>
+                <button id="vBack" data-v="back" aria-pressed="false">Sensors</button>
+              </div>
+              <label class="toggle"><input type="checkbox" id="auto" checked> Auto-rotate</label>
+            </div>
+            <div class="group">
+              <div class="label">Emergency</div>
+              <div class="row">
+                <button class="btn sos" id="btnSos">Hold-to-SOS (simulate)</button>
+                <button class="btn" id="btnCancel" disabled>Cancel</button>
+              </div>
+            </div>
+          </aside>
+        </main>
+
+        <section class="below">
+          <div class="card">
+            <h2>Sensor stack on the back</h2>
+            <dl class="spec">
+              <dt>4 × green LED</dt><dd>525 nm reflective PPG. The same signal your camera scan reads, but continuous and without a finger on the lens.</dd>
+              <dt>Red + IR LED</dt><dd>660 / 940 nm pair for SpO₂ during sleep and after alerts.</dd>
+              <dt>2 × photodiode</dt><dd>Picks up the reflected light. Signal quality (SQI) gates every reading before it counts.</dd>
+              <dt>3-axis accel</dt><dd>Tells a workout from a resting spike, so 146 BPM on a run stays quiet and 197 BPM at a desk does not.</dd>
+              <dt>Haptic + BLE 5.3</dt><dd>Buzzes on alerts and syncs to the phone app, which forwards to the PulseGuard server.</dd>
+            </dl>
+          </div>
+          <div class="card">
+            <h2>Where the data goes</h2>
+            <div class="flow">
+              <div class="node"><b>Band</b><span>PPG, motion, SOS button</span></div>
+              <div class="arrow">→</div>
+              <div class="node"><b>Phone app</b><span>BLE sync, SQI filter</span></div>
+              <div class="arrow">→</div>
+              <div class="node"><b>PulseGuard</b><span>Risk engine, reports</span></div>
+              <div class="arrow">→</div>
+              <div class="node"><b>Doctor · Family</b><span>Consult request, family card</span></div>
+            </div>
+            <p class="note">This maps onto the existing platform: the band replaces the 25-second camera scan on the Heart Rate page, alerts create the same Video Consult request, and the daily summary fills Reports &amp; Family.</p>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ============ 2. LAYER-BY-LAYER TEARDOWN ============ -->
+    <div id="td">
+      <div class="wrap">
+        <div class="head">
+          <div>
+            <p class="eyebrow">PulseGuard AI · layer by layer</p>
+            <h1>PulseGuard Wear Teardown</h1>
+            <p class="lede">Scroll to take the device apart. Nine layers separate one at a time, from the sapphire glass down to the strap, with what each one does for the PulseGuard app. This is a concept model, not a shipping product.</p>
+          </div>
+          <div class="seg" id="tdForm" role="group" aria-label="Form factor">
+            <button id="tdWatch" data-v="watch" aria-pressed="true">Watch</button>
+            <button id="tdBand" data-v="band" aria-pressed="false">Band</button>
+          </div>
+        </div>
+
+        <div class="scrolly">
+          <div class="stage" id="tdStage" role="img" aria-label="3D exploded view of the PulseGuard Wear device">
+            <div class="overlay"><svg id="lines"></svg><div id="labels"></div></div>
+            <div class="hud"><span id="hudL">Assembled</span><span id="hudR">Drag to rotate</span></div>
+            <div class="bar"><i id="bar"></i></div>
+          </div>
+          <div class="steps" id="steps"></div>
+        </div>
+
+        <section class="specs">
+          <h2>Stack-up</h2>
+          <p id="specNote">Layer thickness from top to bottom for the watch. Switch to Band above to compare.</p>
+          <div class="tbl"><table>
+            <thead><tr><th>#</th><th>Layer</th><th>Material / part</th><th class="num">Thickness</th></tr></thead>
+            <tbody id="specBody"></tbody>
+            <tfoot><tr><td></td><td>Total stack</td><td></td><td class="num" id="specTotal"></td></tr></tfoot>
+          </table></div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- PREDICTION SECTION -->
+  <section class="prediction" id="prediction">
+    <div class="container">
+      <div class="section-header">
+        <h2>Heart Disease Prediction</h2>
+        <p>
+          Enter your health parameters below to get an instant prediction of
+          your heart disease risk.
+        </p>
+      </div>
+      <div class="prediction-container">
+        <div class="prediction-form">
+          <div class="form-header">
+            <h3>Your Health Information</h3>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="age">Age(in Years)</label>
+              <input type="number" id="age" class="form-control" placeholder="Enter your age" />
+            </div>
+
+            <div class="form-group">
+              <label for="height">Height (in cm)</label>
+              <input type="number" id="height" class="form-control" placeholder="Enter your height" />
+            </div>
+
+            <div class="form-group">
+              <label for="weight">weight (in Kg)</label>
+              <input type="number" id="weight" class="form-control" placeholder="Enter your weight" />
+            </div>
+
+            <div class="form-group">
+              <label for="bmi">BMI</label>
+              <input type="number" id="bmi" class="form-control" placeholder="Your BMI" />
+            </div>
+
+            <div class="form-group">
+              <label for="sex">Gender</label>
+              <select id="sex" class="form-control">
+                <option value="">Select</option>
+                <option value="1">Male</option>
+                <option value="0">Female</option>
+              </select>
+            </div>
+          </div>
+
+
+
+
+          <div class="form-group">
+            <label for="ch">Cholesterol(0: Normal, 1: Borderline, 2: High
+              )</label>
+            <select id="ch" class="form-control">
+              <option value="2">High</option>
+              <option value="1">Borderline</option>
+              <option value="0">Normal</option>
+            </select>
+          </div>
+
+
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="smoking">Do you smoke?</label>
+              <select id="smoking" class="form-control">
+                <option value="2">Regular</option>
+                <option value="1">Occasionally</option>
+                <option value="0">No</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="sleep">Your Sleep Cycle?</label>
+              <select id="sleep" class="form-control">
+                <option value="2">Good</option>
+                <option value="1">Average</option>
+                <option value="0">Poor</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="alcohol">Do you drink alcohol?</label>
+              <select id="alcohol" class="form-control">
+                <option value="2">Regular</option>
+                <option value="1">Occasionally</option>
+                <option value="0">No</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="physical">Physical activity in past 30 days?</label>
+              <select id="physical" class="form-control">
+                <option value="2">High</option>
+                <option value="1">Medium</option>
+                <option value="0">Low</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="hypertension">Hypertension</label>
+              <select id="hypertension" class="form-control">
+                <option value="">Select</option>
+                <option value="1">Yes</option>
+                <option value="0">No</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="diabetes">Diabetes level</label>
+              <select id="diabetes" class="form-control">
+                <option value="">Select</option>
+                <option value="1">Yes</option>
+                <option value="0">No</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="family">Family History</label>
+              <select id="family" class="form-control">
+                <option value="">Select</option>
+                <option value="1">Yes</option>
+                <option value="0">No</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="prediction-submit">
+            <button class="btn btn-primary" id="predict-btn">
+              <i class="fas fa-heart"></i>
+              Predict Heart Disease Risk
+            </button>
+            <button class="btn" id="clear-btn">
+              <i class="fas fa-sync-alt"></i>
+              Clear
+            </button>
+          </div>
+        </div>
+        <div class="prediction-results">
+          <div class="result-card" id="result-card">
+            <h3>Your Heart Disease Risk Result</h3>
+            <div class="prediction-chart">
+              <div class="risk-meter">
+                <div class="risk-circle">
+                  <div class="risk-inner">
+                    <span class="risk-percentage" id="risk-percentage">0%</span>
+                  </div>
+                </div>
+              </div>
+              <div class="risk-details">
+                <div class="risk-level" id="risk-level">Low Risk</div>
+                <p class="risk-message" id="risk-message">
+                  Please fill out the form to get your heart disease risk
+                  prediction.
+                </p>
+                <div class="download-report">
+                  <button class="btn btn-outline" id="download-btn" disabled>
+                    <i class="fas fa-file-download"></i>
+                    Download PDF Report
+                  </button>
+                  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      document.getElementById("clear-btn").addEventListener("click", function () {
+        // Clear all form input fields
+        document.getElementById("age").value = "";
+        document.getElementById("height").value = "";
+        document.getElementById("weight").value = "";
+        document.getElementById("bmi").value = "";
+        document.getElementById("sex").value = "";
+        document.getElementById("ch").value = "1"; // Default to borderline
+        document.getElementById("smoking").value = "0"; // Default to No
+        document.getElementById("sleep").value = "1"; // Default to Average
+        document.getElementById("alcohol").value = "0"; // Default to No
+        document.getElementById("physical").value = "1"; // Default to Medium
+        document.getElementById("hypertension").value = "";
+        document.getElementById("diabetes").value = "";
+        document.getElementById("family").value = "";
+
+        // Reset prediction results
+        document.getElementById("risk-percentage").innerText = "0%";
+        document.getElementById("risk-level").innerText = "Low Risk";
+        document.getElementById("risk-message").innerText = "Please fill out the form to get your heart disease risk prediction.";
+        document.getElementById("download-btn").disabled = true;
+      }); // <-- Added closing brace and parenthesis
+    </script>
+
+  </section>
+
+  <!-- CHATBOT SECTION -->
+  <section class="chatbot" id="chatbot">
+    <section class="section">
+      <div class="chat-info">
+        <h2>AI Chat Assistant</h2>
+        <p>Get instant support and insights using our AI-powered chat system. Click the button below to start chatting!
+        </p>
+        <button class="chatbot-btn" onclick="openChatbot()">
+          <i class="fas fa-robot"></i> Chat with AI
+        </button>
+      </div>
+    </section>
+
+    <div class="overlay" id="overlay" onclick="closeChatbot()"></div>
+    <div class="chatbot-container" id="chatbotBox">
+      <div class="chatbot-header">AI Assistant <button class="close-btn" onclick="closeChatbot()">&times;</button></div>
+      <iframe src="https://www.chatbase.co/chatbot-iframe/aP6m96qm1qBzKqBADPzAx"></iframe>
+    </div>
+
+    <script>
+      function openChatbot() {
+        document.getElementById('chatbotBox').style.display = 'flex';
+        document.getElementById('overlay').style.display = 'block';
+      }
+
+      function closeChatbot() {
+        document.getElementById('chatbotBox').style.display = 'none';
+        document.getElementById('overlay').style.display = 'none';
+      }
+    </script>
+
+    <div class="chatbot-info">
+      <div class="info-card">
+        <h3>How CardioBot Helps You</h3>
+        <ul class="info-list">
+          <li>
+            <i class="fas fa-check-circle"></i>
+            <div>Get answers to health questions 24/7</div>
+          </li>
+          <li>
+            <i class="fas fa-check-circle"></i>
+            <div>Receive personalized lifestyle recommendations</div>
+          </li>
+          <li>
+            <i class="fas fa-check-circle"></i>
+            <div>Learn about heart disease risk factors</div>
+          </li>
+          <li>
+            <i class="fas fa-check-circle"></i>
+            <div>Understand your prediction results</div>
+          </li>
+          <li>
+            <i class="fas fa-check-circle"></i>
+            <div>Track your progress with helpful reminders</div>
+          </li>
+        </ul>
+      </div>
+    </div>
+    </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS SECTION -->
+  <section class="testimonials">
+    <div class="container">
+      <div class="section-header">
+        <h2>User Testimonials</h2>
+        <p>See what our users are saying about PulseGuard AI</p>
+      </div>
+      <div class="testimonial-slider">
+        <div class="testimonial-track" id="testimonial-track">
+          <div class="testimonial-card">
+            <div class="testimonial-content">
+              <p>PulseGuard AI helped me identify my heart disease risk early. Following the recommendations has
+                improved my health metrics significantly in just three months.</p>
+            </div>
+            <div class="testimonial-author">
+              <div class="author-avatar">JD</div>
+              <div class="author-info">
+                <h4>John Davis</h4>
+                <small>Software Engineer, 42</small>
+              </div>
+            </div>
+          </div>
+          <div class="testimonial-card">
+            <div class="testimonial-content">
+              <p>The AI chatbot is incredibly helpful. It answered all my questions and helped me understand what
+                lifestyle changes I needed to make to improve my heart health.</p>
+            </div>
+            <div class="testimonial-author">
+              <div class="author-avatar">SM</div>
+              <div class="author-info">
+                <h4>Sarah Miller</h4>
+                <small>Teacher, 38</small>
+              </div>
+            </div>
+          </div>
+          <div class="testimonial-card">
+            <div class="testimonial-content">
+              <p>PulseGuard AI is an innovative tool that enhances early heart disease detection, offering accurate
+                risk assessment and promoting proactive healthcare interventions</p>
+            </div>
+            <div class="testimonial-author">
+              <div class="author-avatar">MD</div>
+              <div class="author-info">
+                <h4>Dr. Nunudin Datta</h4>
+                <small>Doctor(BHMS)</small>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-controls">
+          <div class="testimonial-dot active"></div>
+          <div class="testimonial-dot"></div>
+          <div class="testimonial-dot"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      let index = 0;
+      const testimonials = document.querySelectorAll(".testimonial-card");
+      const dots = document.querySelectorAll(".testimonial-dot");
+      const totalTestimonials = testimonials.length;
+
+      function updateSlider() {
+        // Reset all testimonials
+        testimonials.forEach((card, i) => {
+          card.style.display = "none";
+          dots[i].classList.remove("active");
+        });
+
+        // Show the current testimonial
+        testimonials[index].style.display = "block";
+        dots[index].classList.add("active");
+
+        // Move to the next testimonial
+        index = (index + 1) % totalTestimonials;
+      }
+
+      // Initial call
+      updateSlider();
+
+      // Auto-slide every 3 seconds
+      setInterval(updateSlider, 3000);
+    });
+  </script>
+
+  <!-- FOOTER -->
+  <footer class="footer" id="contact">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-about">
+          <div class="footer-logo">
+            <div class="logo">
+              <i class="fas fa-heartbeat"></i>
+              <span>PulseGuard AI</span>
+            </div>
+          </div>
+          <p>PulseGuard AI is an AI-powered heart disease prediction system that helps users assess their risk and take
+            proactive measures toward better heart health.</p>
+          <div class="social-links">
+            <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-linkedin-in"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+          </div>
+        </div>
+        <div class="footer-links">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="#home">Home</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#prediction">Prediction</a></li>
+            <li><a href="#chatbot">AI Assistant</a></li>
+            <li><a href="#contact">Contact Us</a></li>
+          </ul>
+        </div>
+        <div class="footer-links">
+          <h3>Resources</h3>
+          <ul>
+            <li><a href="#">About Heart Disease</a></li>
+            <li><a href="#">Health Tips</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+            <li><a href="#">FAQ</a></li>
+          </ul>
+        </div>
+        <div class="footer-newsletter">
+          <h3> Our Newsletter</h3>
+          <p>Subscribe to our newsletter to receive the latest updates on heart health and our AI technology.</p>
+          <div class="newsletter-form">
+            <input type="email" id="email-input" placeholder="Your email address">
+            <button onclick="validateEmail()">Subscribe</button>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 PulseGuard AI. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function validateEmail() {
+      const emailInput = document.getElementById("email-input");
+      const email = emailInput.value.trim();
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic email regex
+
+      if (email === "") {
+        alert("Please enter your email address.");
+      } else if (!emailPattern.test(email)) {
+        alert("Please enter a valid email address.");
+      } else {
+        alert("Thank you for subscribing! You will receive our latest updates.");
+        emailInput.value = ""; // Clear input after successful subscription
+      }
+    }
+  </script>
+
+
+  <script src="/static/index.js"></script>
+
+  <!-- Floating SOS Button -->
+  <a href="/emergency" id="floating-sos" style="position:fixed;bottom:28px;right:28px;z-index:9999;
+              width:64px;height:64px;border-radius:50%;
+              background:radial-gradient(circle,#ff3a3a,#e74c3c);
+              color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;
+              text-decoration:none;font-size:10px;font-weight:800;letter-spacing:1px;
+              box-shadow:0 0 0 0 rgba(231,76,60,0.7);
+              animation:sos-float 2s infinite;">
+    <i class="fas fa-exclamation-triangle" style="font-size:20px;margin-bottom:2px;"></i>SOS
+  </a>
+  <style>
+    @keyframes sos-float {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7);
+      }
+
+      70% {
+        box-shadow: 0 0 0 18px rgba(231, 76, 60, 0);
+      }
+    }
+  </style>
+
+  <!-- PulseGuard quick links bar -->
+  <div style="position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:9998;
+                background:rgba(10,10,10,0.92);border:1px solid #2a2a2e;border-radius:40px;
+                padding:10px 22px;display:flex;gap:16px;align-items:center;
+                backdrop-filter:blur(10px);box-shadow:0 4px 24px rgba(0,0,0,0.5);">
+    <a href="/dashboard"
+      style="color:#1db954;text-decoration:none;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;">
+      <i class="fas fa-chart-line"></i>Dashboard</a>
+    <span style="color:#333;">|</span>
+    <a href="/wearable"
+      style="color:#46f0a0;text-decoration:none;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;">
+      <i class="fas fa-cube"></i>Wearable 3D</a>
+    <span style="color:#333;">|</span>
+    <a href="/lifestyle"
+      style="color:#e6e6e6;text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px;">
+      <i class="fas fa-running"></i>Lifestyle</a>
+    <span style="color:#333;">|</span>
+    <a href="/diet" style="color:#e6e6e6;text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px;">
+      <i class="fas fa-apple-alt"></i>Diet AI</a>
+    <span style="color:#333;">|</span>
+    <a href="/emergency"
+      style="color:#e74c3c;text-decoration:none;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;">
+      <i class="fas fa-ambulance"></i>Emergency</a>
+  </div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* pause whichever 3D view is off screen */
+window.PG_VIS={live:true,td:false};
+(function(){
+  const io=new IntersectionObserver(es=>es.forEach(e=>{
+    if(window.PG_VIS.hasOwnProperty(e.target.id)){
+      window.PG_VIS[e.target.id]=e.isIntersecting;
+    }
+  }),{rootMargin:'200px'});
+  ['live','td'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) io.observe(el);
+  });
+})();
+</script>
+<script>
+/* ---------- 1. LIVE 3D MODEL ---------- */
+(function(){
+const $ = s => document.querySelector(s);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- data ---------- */
+const FORMS = {
+  watch:{w:3.9,h:4.6,r:1.15,depth:0.62,bev:0.2,strapW:3.0,label:'Watch',dims:'44 × 38 mm case · 10.7 mm thick'},
+  band:{w:2.15,h:4.5,r:1.02,depth:0.56,bev:0.2,strapW:1.8,label:'Band',dims:'46 × 21 mm capsule · 12 mm thick'}
+};
+const CASES = [
+  {id:'graphite',name:'Graphite',c:0x3b4045,rough:.32},
+  {id:'silver',name:'Silver',c:0xc9ced3,rough:.22},
+  {id:'titan',name:'Titanium gold',c:0xb99b75,rough:.28}
+];
+const STRAPS = [
+  {id:'obsidian',name:'Obsidian',c:0x1c2023},
+  {id:'pulse',name:'Pulse red',c:0xc8323b},
+  {id:'sage',name:'Sage',c:0x7b9682},
+  {id:'sand',name:'Sand',c:0xcbb799},
+  {id:'glacier',name:'Glacier',c:0x9db6c6}
+];
+const SCEN = {
+  rest:{bpm:72,risk:34,sqi:.94,moving:false,name:'Resting'},
+  walk:{bpm:104,risk:36,sqi:.86,moving:true,name:'Brisk walk'},
+  run:{bpm:146,risk:38,sqi:.78,moving:true,name:'Workout'},
+  tachy:{bpm:197,risk:81,sqi:.91,moving:false,name:'Tachycardia at rest'}
+};
+const S = {form:'watch',screen:'heart',scen:'rest',caseId:'graphite',strapId:'obsidian',
+  bpm:72,risk:34,sqi:.94,phase:0,beat:0,alert:false,abnSince:null,requested:false,
+  sos:null /* {start, sent} */, yaw:.55,pitch:.16,tYaw:.55,tPitch:.16,dist:17.5,auto:!reduce,viewAnim:false};
+if(reduce) $('#auto').checked=false;
+
+/* ---------- log ---------- */
+const logEl = $('#log');
+function stamp(){const d=new Date();return d.toTimeString().slice(0,8);}
+function log(msg,cls){const li=document.createElement('li');if(cls)li.className=cls;li.innerHTML='<time>'+stamp()+'</time><span></span>';li.lastChild.textContent=msg;logEl.prepend(li);while(logEl.children.length>30)logEl.lastChild.remove();}
+log('Paired with PulseGuard app over BLE','good');
+log('Baseline resting heart rate set to 72 BPM');
+
+/* ---------- three setup ---------- */
+const stage = $('#stage');
+const renderer = new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+stage.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30,1,.1,100);
+
+// studio environment for metal reflections
+(function(){
+  const pm = new THREE.PMREMGenerator(renderer);
+  const env = new THREE.Scene();
+  env.add(new THREE.Mesh(new THREE.SphereGeometry(20,32,16),new THREE.MeshBasicMaterial({color:0x0b1113,side:THREE.BackSide})));
+  function panel(r,g,b,x,y,z,w,h){const m=new THREE.MeshBasicMaterial({side:THREE.DoubleSide});m.color.setRGB(r,g,b);const p=new THREE.Mesh(new THREE.PlaneGeometry(w,h),m);p.position.set(x,y,z);p.lookAt(0,0,0);env.add(p);}
+  panel(2.6,2.6,2.7, 0,12,3, 16,6);
+  panel(1.6,1.7,1.8, -12,2,7, 6,12);
+  panel(1.0,1.1,1.2, 11,4,8, 5,9);
+  panel(1.8,.45,.5, 10,0,-9, 5,10);
+  panel(.25,.35,.4, 0,-12,0, 20,20);
+  scene.environment = pm.fromScene(env,.04).texture;
+})();
+const key = new THREE.DirectionalLight(0xffffff,.6); key.position.set(-4,6,8); scene.add(key);
+
+// soft contact shadow
+(function(){
+  const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');
+  const gr=g.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(0,0,0,.55)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(0,0,128,128);
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(9,5),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false}));
+  m.rotation.x=-Math.PI/2;m.position.y=-4.1;scene.add(m);
+})();
+
+const pivot = new THREE.Group(); scene.add(pivot);
+let device=null, parts={};
+
+/* ---------- geometry helpers ---------- */
+function rr(w,h,r){const s=new THREE.Shape(),x=-w/2,y=-h/2;r=Math.min(r,w/2,h/2);
+  s.moveTo(x+r,y);s.lineTo(x+w-r,y);s.absarc(x+w-r,y+r,r,-Math.PI/2,0);s.lineTo(x+w,y+h-r);s.absarc(x+w-r,y+h-r,r,0,Math.PI/2);
+  s.lineTo(x+r,y+h);s.absarc(x+r,y+h-r,r,Math.PI/2,Math.PI);s.lineTo(x,y+r);s.absarc(x+r,y+r,r,Math.PI,Math.PI*1.5);return s;}
+function flatUV(geo,w,h){const p=geo.attributes.position,uv=geo.attributes.uv;for(let i=0;i<p.count;i++)uv.setXY(i,(p.getX(i)+w/2)/w,(p.getY(i)+h/2)/h);uv.needsUpdate=true;return geo;}
+const LOOP_C = new THREE.Vector3(0,0,-2.3);
+function strapGeo(curve,width,thick,segs){
+  const n=22,prof=[];for(let i=0;i<n;i++){const a=i/n*Math.PI*2,c=Math.cos(a),s=Math.sin(a);prof.push([Math.sign(c)*Math.pow(Math.abs(c),.3)*width/2,Math.sign(s)*Math.pow(Math.abs(s),.3)*thick/2]);}
+  const pos=[],uv=[],idx=[],X=new THREE.Vector3(1,0,0),len=curve.getLength();
+  for(let j=0;j<=segs;j++){const t=j/segs,p=curve.getPointAt(t),T=curve.getTangentAt(t),N=new THREE.Vector3().crossVectors(T,X).normalize();
+    for(let i=0;i<n;i++){const[u,v]=prof[i];pos.push(p.x+u,p.y+N.y*v,p.z+N.z*v);uv.push(i/n,t*len/width);}}
+  for(let j=0;j<segs;j++)for(let i=0;i<n;i++){const a=j*n+i,b=j*n+(i+1)%n,c=(j+1)*n+i,d=(j+1)*n+(i+1)%n;idx.push(a,c,b,b,c,d);}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();return g;}
+function frameAt(curve,t){const p=curve.getPointAt(t),T=curve.getTangentAt(t),X=new THREE.Vector3(1,0,0),N=new THREE.Vector3().crossVectors(T,X).normalize();
+  if(N.dot(p.clone().sub(LOOP_C))<0)N.negate();return{p,T,N,X};}
+
+/* ---------- screen canvas ---------- */
+const scr={canvas:document.createElement('canvas')};scr.ctx=scr.canvas.getContext('2d');
+scr.tex=new THREE.CanvasTexture(scr.canvas);scr.tex.encoding=THREE.sRGBEncoding;scr.tex.anisotropy=8;
+const wave=new Array(220).fill(0);
+
+/* ---------- materials ---------- */
+const M={
+  caseMat:new THREE.MeshStandardMaterial({metalness:1,roughness:.3}),
+  strapMat:new THREE.MeshPhysicalMaterial({roughness:.7,clearcoat:.12,clearcoatRoughness:.6,side:THREE.DoubleSide,envMapIntensity:.35,transparent:true}),
+  buckleMat:new THREE.MeshStandardMaterial({metalness:1,roughness:.3,transparent:true}),
+  glass:new THREE.MeshPhysicalMaterial({color:0x040607,roughness:.06,metalness:0,clearcoat:1,clearcoatRoughness:.03}),
+  display:new THREE.MeshBasicMaterial({map:scr.tex,toneMapped:false}),
+  sheen:new THREE.MeshStandardMaterial({color:0x000000,roughness:.1,metalness:0,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}),
+  back:new THREE.MeshPhysicalMaterial({color:0x0c1012,roughness:.15,clearcoat:1}),
+  led:new THREE.MeshBasicMaterial({color:0x46f0a0,toneMapped:false}),
+  red:new THREE.MeshBasicMaterial({color:0xff3344,toneMapped:false}),
+  ir:new THREE.MeshBasicMaterial({color:0x3a1420,toneMapped:false}),
+  diode:new THREE.MeshStandardMaterial({color:0x221a3a,roughness:.2,metalness:.3}),
+  accent:new THREE.MeshStandardMaterial({color:0xff4d5e,roughness:.35,metalness:.2,emissive:0x40080c}),
+  hole:new THREE.MeshBasicMaterial({color:0x050505,transparent:true})
+};
+function applyFinish(){const c=CASES.find(x=>x.id===S.caseId),s=STRAPS.find(x=>x.id===S.strapId);
+  M.caseMat.color.setHex(c.c);M.caseMat.roughness=c.rough;M.buckleMat.color.setHex(c.c);M.buckleMat.roughness=c.rough;M.strapMat.color.setHex(s.c);
+  $('#stageTag').textContent=FORMS[S.form].label+' · '+c.name+' / '+s.name;}
+
+// LED glow sprite
+const glowTex=(function(){const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');const gr=g.createRadialGradient(64,64,0,64,64,64);
+  gr.addColorStop(0,'rgba(120,255,190,1)');gr.addColorStop(.25,'rgba(70,240,160,.45)');gr.addColorStop(1,'rgba(70,240,160,0)');g.fillStyle=gr;g.fillRect(0,0,128,128);return new THREE.CanvasTexture(c);})();
+
+/* ---------- build device ---------- */
+function build(){
+  if(device){pivot.remove(device);device.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
+  const F=FORMS[S.form];device=new THREE.Group();device.position.z=1.9;pivot.add(device);parts={};
+  const {w,h,r,depth,bev}=F;
+  // case
+  const cg=new THREE.ExtrudeGeometry(rr(w-2*bev,h-2*bev,r-bev),{depth,bevelEnabled:true,bevelThickness:bev,bevelSize:bev,bevelSegments:10,curveSegments:40});
+  cg.translate(0,0,-depth/2);device.add(new THREE.Mesh(cg,M.caseMat));
+  const front=depth/2+bev, backZ=-front, fw=w-2*bev, fh=h-2*bev;
+  // glass + display
+  const gw=fw-.03,gh=fh-.03;const gl=new THREE.Mesh(new THREE.ShapeGeometry(rr(gw,gh,r-bev),40),M.glass);gl.position.z=front+.004;device.add(gl);
+  const inset=S.form==='watch'?.2:.16;const dw=fw-2*inset,dh=fh-2*inset;
+  const dg=flatUV(new THREE.ShapeGeometry(rr(dw,dh,Math.max(.05,r-bev-inset*.8)),40),dw,dh);
+  const dm=new THREE.Mesh(dg,M.display);dm.position.z=front+.008;device.add(dm);
+  const sh=new THREE.Mesh(new THREE.ShapeGeometry(rr(gw,gh,r-bev),40),M.sheen);sh.position.z=front+.012;device.add(sh);
+  const px=190;scr.canvas.width=Math.round(dw*px);scr.canvas.height=Math.round(dh*px);scr.tex.needsUpdate=true;
+  // crown + button (watch)
+  if(S.form==='watch'){
+    const crown=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,.36,48),M.caseMat);crown.rotation.z=Math.PI/2;crown.position.set(w/2+.13,.75,0);device.add(crown);
+    const ring=new THREE.Mesh(new THREE.CylinderGeometry(.31,.31,.06,48),M.accent);ring.rotation.z=Math.PI/2;ring.position.set(w/2+.29,.75,0);device.add(ring);
+    const btn=new THREE.Mesh(new THREE.BoxGeometry(.12,.9,.3),M.caseMat);btn.position.set(w/2+.04,-.55,0);device.add(btn);
+  } else {
+    const dot=new THREE.Mesh(new THREE.CircleGeometry(.08,32),M.accent);dot.position.set(0,-fh/2+.17,front+.013);device.add(dot);
+  }
+  // sensor back
+  const rb=Math.min(w,h)*(S.form==='watch'?.36:.34);
+  const back=new THREE.Mesh(new THREE.CylinderGeometry(rb,rb*1.06,.12,64),M.back);back.rotation.x=Math.PI/2;back.position.z=backZ-.05;device.add(back);
+  const tor=new THREE.Mesh(new THREE.TorusGeometry(rb*1.03,.035,12,64),M.caseMat);tor.position.z=backZ-.02;device.add(tor);
+  const bz=backZ-.112;parts.leds=[];
+  const ledR=rb*.13,off=rb*.42;
+  [[off,0],[-off,0],[0,off],[0,-off]].forEach(([x,y])=>{const m=new THREE.Mesh(new THREE.CircleGeometry(ledR,28),M.led);m.position.set(x,y,bz);m.rotation.y=Math.PI;device.add(m);parts.leds.push(m);});
+  [[off*.72,off*.72,M.red],[-off*.72,-off*.72,M.ir]].forEach(([x,y,mat])=>{const m=new THREE.Mesh(new THREE.CircleGeometry(ledR*.6,20),mat);m.position.set(x,y,bz);m.rotation.y=Math.PI;device.add(m);});
+  [[-off*.72,off*.72],[off*.72,-off*.72]].forEach(([x,y])=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(ledR*1.5,ledR*1.5),M.diode);m.position.set(x,y,bz);m.rotation.y=Math.PI;device.add(m);});
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:0}));sp.scale.set(rb*3.4,rb*3.4,1);sp.position.z=bz-.15;device.add(sp);parts.glow=sp;
+  // strap loop
+  const a=h/2;const pts=[[a-.45,0],[a+.3,-.12],[a+.78,-.85],[3.25,-2.2],[2.75,-3.75],[1.2,-4.5],[-1.2,-4.5],[-2.75,-3.75],[-3.25,-2.2],[-(a+.78),-.85],[-(a+.3),-.12],[-(a-.45),0]].map(([y,z])=>new THREE.Vector3(0,y,z));
+  const curve=new THREE.CatmullRomCurve3(pts,false,'centripetal');const thick=.26;
+  device.add(new THREE.Mesh(strapGeo(curve,F.strapW,thick,260),M.strapMat));
+  // buckle
+  const bw=F.strapW+.34,bl=.62;const bs=rr(bw,bl,.14);bs.holes.push(rr(F.strapW+.06,bl-.3,.06));
+  const bg=new THREE.ExtrudeGeometry(bs,{depth:.1,bevelEnabled:true,bevelThickness:.03,bevelSize:.03,bevelSegments:3,curveSegments:16});bg.translate(0,0,-.05);
+  const fb=frameAt(curve,.45);const bk=new THREE.Mesh(bg,M.buckleMat);const m4=new THREE.Matrix4().makeBasis(fb.X,fb.T,fb.N);bk.quaternion.setFromRotationMatrix(m4);bk.position.copy(fb.p).addScaledVector(fb.N,thick/2);device.add(bk);
+  // pin holes
+  for(let i=0;i<7;i++){const f=frameAt(curve,.53+i*.028);const hm=new THREE.Mesh(new THREE.CircleGeometry(.065,18),M.hole);hm.position.copy(f.p).addScaledVector(f.N,thick/2+.006);hm.lookAt(f.p.clone().addScaledVector(f.N,2));device.add(hm);}
+  applyFinish();$('#dims').textContent=F.dims;
+}
+
+/* ---------- screen drawing ---------- */
+function heartPath(c,x,y,s){c.beginPath();c.moveTo(x,y+s*.35);c.bezierCurveTo(x-s*1.1,y-s*.35,x-s*.45,y-s*1.05,x,y-s*.45);c.bezierCurveTo(x+s*.45,y-s*1.05,x+s*1.1,y-s*.35,x,y+s*.35);c.fill();}
+function level(r){return r<40?['LOW','#3ddc97']:r<65?['MODERATE','#ffb547']:['HIGH','#ff4d5e'];}
+function bpmColor(){return S.alert?'#ff4d5e':S.bpm>120?'#ffb547':'#f2f6f7';}
+function draw(now){
+  const c=scr.ctx,W=scr.canvas.width,H=scr.canvas.height,narrow=W/H<.6,fs=k=>k*Math.min(W/100,H/125);
+  c.fillStyle='#000';c.fillRect(0,0,W,H);c.textAlign='center';c.textBaseline='middle';
+  const t=new Date(),clock=String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
+  const flash=S.alert&&(Math.sin(now*.008)>0);
+  const scr_=S.sos?'sos':S.screen;
+  // top line
+  c.font='500 '+fs(narrow?9:6.4)+'px "IBM Plex Mono", monospace';
+  if(S.alert&&scr_!=='sos'){c.fillStyle=flash?'#ff4d5e':'#7a1d25';c.fillText(narrow?'ALERT':'▲ ABNORMAL HR',W/2,H*.075);}
+  else{c.fillStyle='#b9c5ca';c.fillText(clock,W/2,H*.075);}
+  if(scr_==='heart'){
+    const bs=1+S.beat*.18;c.fillStyle='#ff4d5e';heartPath(c,W/2-(narrow?0:fs(17)),H*.19,fs(narrow?7:4.6)*bs);
+    if(!narrow){c.font='600 '+fs(5.2)+'px "Chakra Petch", sans-serif';c.fillStyle='#ff8a95';c.textAlign='left';c.fillText('HEART RATE',W/2-fs(12),H*.19);c.textAlign='center';}
+    c.font='700 '+fs(narrow?40:31)+'px "Chakra Petch", sans-serif';c.fillStyle=bpmColor();c.fillText(Math.round(S.bpm),W/2,H*(narrow?.36:.40));
+    c.font='500 '+fs(narrow?8.5:5.4)+'px "IBM Plex Mono", monospace';c.fillStyle='#8b9ba2';
+    const ctx=SCEN[S.scen].moving?'active':'resting';c.fillText(narrow?'BPM':'BPM · '+ctx,W/2,H*(narrow?.47:.535));
+    if(narrow){c.fillText(ctx,W/2,H*.52);}
+    // waveform
+    const x0=W*.07,x1=W*.93,y0=H*(narrow?.6:.6),y1=H*(narrow?.8:.82);
+    c.strokeStyle='rgba(255,255,255,.07)';c.lineWidth=1;for(let i=0;i<=4;i++){const y=y0+(y1-y0)*i/4;c.beginPath();c.moveTo(x0,y);c.lineTo(x1,y);c.stroke();}
+    const col=S.alert?'#ff4d5e':'#46f0a0';c.strokeStyle=col;c.lineWidth=fs(narrow?1.6:1.1);c.lineJoin='round';c.beginPath();
+    for(let i=0;i<wave.length;i++){const x=x0+(x1-x0)*i/(wave.length-1),y=y1-(y1-y0)*(.12+.76*wave[i]);i?c.lineTo(x,y):c.moveTo(x,y);}c.stroke();
+    const ly=y1-(y1-y0)*(.12+.76*wave[wave.length-1]);c.fillStyle=col;c.beginPath();c.arc(x1,ly,fs(narrow?2.4:1.6),0,Math.PI*2);c.fill();
+    c.font='500 '+fs(narrow?7.5:4.8)+'px "IBM Plex Mono", monospace';
+    if(S.requested){c.fillStyle='#ff8a95';c.fillText(narrow?'DR NOTIFIED':'Doctor request sent',W/2,H*.915);}
+    else{c.fillStyle='#8b9ba2';c.fillText((narrow?'SQI ':'SIGNAL ')+Math.round(S.sqi*100)+'%'+(narrow?'':'  ·  SpO₂ 98%'),W/2,H*.915);}
+  } else if(scr_==='risk'){
+    const [lv,lc]=level(S.risk),cx=W/2,cy=H*.44,R=Math.min(W*.36,H*.24),lw=fs(narrow?6:4.2);
+    c.lineCap='round';c.lineWidth=lw;c.strokeStyle='#1c2529';c.beginPath();c.arc(cx,cy,R,Math.PI*.75,Math.PI*2.25);c.stroke();
+    c.strokeStyle=lc;c.beginPath();c.arc(cx,cy,R,Math.PI*.75,Math.PI*(.75+1.5*S.risk/100));c.stroke();c.lineCap='butt';
+    c.fillStyle='#f2f6f7';c.font='700 '+fs(narrow?24:20)+'px "Chakra Petch", sans-serif';c.fillText(Math.round(S.risk),cx,cy);
+    c.fillStyle='#8b9ba2';c.font='500 '+fs(narrow?6.5:4.4)+'px "IBM Plex Mono", monospace';c.fillText('RISK',cx,cy-R*.52);
+    c.fillStyle=lc;c.font='600 '+fs(narrow?7.5:5.6)+'px "Chakra Petch", sans-serif';c.fillText(lv,cx,cy+R*.95);
+    c.fillStyle='#8b9ba2';c.font='500 '+fs(narrow?6.5:4.6)+'px "IBM Plex Mono", monospace';
+    if(narrow){c.fillText('HR '+Math.round(S.bpm),cx,H*.8);c.fillText('SLEEP 7h',cx,H*.86);c.fillText('STRESS 5',cx,H*.92);}
+    else{c.fillText('HR '+Math.round(S.bpm)+'  ·  Sleep 7h  ·  Stress 5',cx,H*.9);}
+  } else if(scr_==='trend'){
+    const vals=[71,74,69,78,73,76,Math.round(S.bpm)],days=['M','T','W','T','F','S','S'];
+    c.fillStyle='#8b9ba2';c.font='500 '+fs(narrow?7:4.8)+'px "IBM Plex Mono", monospace';c.fillText(narrow?'7-DAY HR':'7-DAY AVG HEART RATE',W/2,H*.17);
+    const x0=W*.1,x1=W*.9,yb=H*.76,yt=H*.3,bw=(x1-x0)/7*.56;
+    vals.forEach((v,i)=>{const x=x0+(x1-x0)*(i+.5)/7,hh=(yb-yt)*Math.max(.05,Math.min(1,(v-50)/(200-50)));c.fillStyle=i===6?(S.alert?'#ff4d5e':'#46f0a0'):'#2c3a41';
+      c.beginPath();c.rect(x-bw/2,yb-hh,bw,hh);c.fill();c.fillStyle=i===6?'#f2f6f7':'#6d7d84';c.font='500 '+fs(narrow?5.5:4)+'px "IBM Plex Mono", monospace';c.fillText(days[i],x,H*.81);
+      if(i===6){c.font='600 '+fs(narrow?6.5:4.8)+'px "Chakra Petch", sans-serif';c.fillText(v,x,yb-hh-fs(4));}});
+    c.fillStyle='#8b9ba2';c.font='500 '+fs(narrow?6:4.4)+'px "IBM Plex Mono", monospace';c.fillText(narrow?'PEAK 146':'Screenings 12  ·  Peak 146',W/2,H*.915);
+  } else {
+    const cx=W/2,cy=H*.48,R=Math.min(W*.34,H*.24);
+    let el=0,sent=false;if(S.sos){el=(now-S.sos.start)/1000;sent=S.sos.sent;}
+    c.fillStyle=sent?'#0c2a1d':'#3a0c10';c.beginPath();c.arc(cx,cy,R*1.18,0,Math.PI*2);c.fill();
+    c.fillStyle=sent?'#3ddc97':'#ff4d5e';c.beginPath();c.arc(cx,cy,R*(S.sos&&!sent?1+.04*Math.sin(now*.012):1),0,Math.PI*2);c.fill();
+    if(S.sos&&!sent){c.strokeStyle='#fff';c.lineWidth=fs(narrow?3:2);c.beginPath();c.arc(cx,cy,R*1.18,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,el/5));c.stroke();}
+    c.fillStyle='#1a0306';c.font='700 '+fs(narrow?16:17)+'px "Chakra Petch", sans-serif';
+    c.fillText(sent?'SENT':S.sos?String(Math.max(1,Math.ceil(5-el))):'SOS',cx,cy);
+    c.fillStyle='#b9c5ca';c.font='500 '+fs(narrow?6.5:4.8)+'px "IBM Plex Mono", monospace';
+    const line=sent?(narrow?'CONTACTS':'Contacts + hospital alerted'):S.sos?(narrow?'CALLING':'Alerting contacts…'):(narrow?'HOLD 3s':'Hold side button 3 s');
+    c.fillText(line,cx,H*.86);
+  }
+  if(S.alert&&scr_!=='sos'){c.strokeStyle=flash?'rgba(255,77,94,.9)':'rgba(255,77,94,.25)';c.lineWidth=fs(narrow?4:3);c.strokeRect(c.lineWidth/2,c.lineWidth/2,W-c.lineWidth,H-c.lineWidth);}
+  scr.tex.needsUpdate=true;
+}
+
+/* ---------- simulation ---------- */
+let rng=Math.random, nextInterval=1;
+function ppg(f){const g=(x,m,s)=>Math.exp(-((x-m)*(x-m))/(2*s*s));return g(f,.2,.07)+.38*g(f,.46,.08)+.08*g(f,.62,.06);}
+function sample(now){const sc=SCEN[S.scen];const noise=(1-S.sqi)*.35*(rng()-.5)+(sc.moving?.06*Math.sin(now*.004):0);
+  wave.push(Math.max(0,Math.min(1,ppg(S.phase)*.9+.05+noise)));wave.shift();}
+function setStatus(){const el=$('#rStatus');let txt,col;
+  if(S.sos){txt=S.sos.sent?'SOS sent':'SOS countdown';col='var(--pulse)';}
+  else if(S.alert){txt='Abnormal';col='var(--pulse)';}
+  else if(S.abnSince!==null){txt='Verifying';col='var(--warn)';}
+  else if(SCEN[S.scen].moving&&S.bpm>95){txt='Exercise';col='var(--warn)';}
+  else{txt='Normal';col='var(--ok)';}
+  if(el.textContent!==txt){el.textContent=txt;el.style.color=col;}}
+function logic(now){
+  const sc=SCEN[S.scen];
+  if(!sc.moving&&S.bpm>150){if(S.abnSince===null)S.abnSince=now;
+    if(!S.alert&&now-S.abnSince>4000){S.alert=true;log('Sustained '+Math.round(S.bpm)+' BPM for 4 s with no motion','alert');log('Haptic alert on wrist. Screen switched to heart rate','alert');S.screen='heart';syncSeg('#segScreen','heart');
+      setTimeout(()=>{if(S.alert&&!S.requested){S.requested=true;log('Consultation request sent to doctor (simulated)','alert');log('Family card updated with the event');}},1800);}}
+  else{S.abnSince=null;if(S.alert&&S.bpm<130){S.alert=false;S.requested=false;log('Heart rate back in range','good');}}
+  if(S.sos&&!S.sos.sent&&now-S.sos.start>5000){S.sos.sent=true;log('SOS sent: emergency contacts and nearest hospital alerted (simulated)','alert');$('#btnCancel').textContent='Clear';}
+}
+
+/* ---------- UI wiring ---------- */
+function syncSeg(sel,v){document.querySelectorAll(sel+' button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v?'true':'false'));}
+$('#segForm').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.dataset.v===S.form)return;S.form=b.dataset.v;syncSeg('#segForm',S.form);build();log('Switched to '+FORMS[S.form].label.toLowerCase()+' form factor');});
+$('#segScreen').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.screen=b.dataset.v;syncSeg('#segScreen',S.screen);});
+$('#scen').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.dataset.v===S.scen)return;S.scen=b.dataset.v;syncSeg('#scen',S.scen);
+  const sc=SCEN[S.scen];log('Scenario: '+sc.name+(sc.moving?' (motion detected)':''));if(S.scen==='run')setTimeout(()=>{if(S.scen==='run')log('146 BPM with motion: logged as exercise, no alert','good');},3500);});
+function views(v){S.auto=false;$('#auto').checked=false;S.tPitch=v==='back'?.1:.14;const target=v==='front'?0:v==='side'?-Math.PI/2:Math.PI;
+  const k=Math.round((S.yaw-target)/(Math.PI*2));S.tYaw=target+k*Math.PI*2;S.viewAnim=true;syncSeg('#segView',v);}
+$('#segView').addEventListener('click',e=>{const b=e.target.closest('button');if(b)views(b.dataset.v);});
+$('#auto').addEventListener('change',e=>{S.auto=e.target.checked;if(S.auto){S.viewAnim=false;syncSeg('#segView','');}});
+function swatches(el,list,key){list.forEach(it=>{const b=document.createElement('button');b.className='sw';b.id='sw-'+it.id;b.style.background='#'+it.c.toString(16).padStart(6,'0');b.title=it.name;b.setAttribute('aria-label',it.name);
+  b.setAttribute('aria-pressed',S[key]===it.id?'true':'false');b.onclick=()=>{S[key]=it.id;el.querySelectorAll('.sw').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));applyFinish();};el.appendChild(b);});}
+swatches($('#swCase'),CASES,'caseId');swatches($('#swStrap'),STRAPS,'strapId');
+$('#btnSos').onclick=()=>{if(S.sos)return;S.sos={start:performance.now(),sent:false};$('#btnSos').disabled=true;$('#btnCancel').disabled=false;$('#btnCancel').textContent='Cancel';log('SOS held for 3 s. 5 s countdown started','alert');views('front');};
+$('#btnCancel').onclick=()=>{if(!S.sos)return;log(S.sos.sent?'SOS cleared':'SOS cancelled on the wrist',S.sos.sent?'':'good');S.sos=null;$('#btnSos').disabled=false;$('#btnCancel').disabled=true;$('#btnCancel').textContent='Cancel';};
+
+// orbit
+let drag=null;
+stage.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,yaw:S.yaw,pitch:S.pitch,type:e.pointerType};S.viewAnim=false;syncSeg('#segView','');stage.setPointerCapture(e.pointerId);});
+stage.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;S.yaw=S.tYaw=drag.yaw+dx*.009;
+  if(drag.type==='mouse'){S.pitch=S.tPitch=Math.max(-.9,Math.min(.9,drag.pitch+dy*.006));}});
+const endDrag=()=>{drag=null;};stage.addEventListener('pointerup',endDrag);stage.addEventListener('pointercancel',endDrag);
+stage.addEventListener('wheel',e=>{e.preventDefault();S.dist=Math.max(10,Math.min(26,S.dist+e.deltaY*.01));},{passive:false});
+
+function resize(){const r=stage.getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;
+  camera.fov=camera.aspect<.8?42:30;camera.updateProjectionMatrix();}
+new ResizeObserver(resize).observe(stage);
+
+/* ---------- loop ---------- */
+build();resize();
+let last=performance.now(),acc=0;
+function frame(now){
+  const dt=Math.min(.05,(now-last)/1000);last=now;if(!window.PG_VIS.live){requestAnimationFrame(frame);return;}
+  const sc=SCEN[S.scen];
+  // physiology easing
+  const target=sc.bpm+(S.scen==='tachy'?3*Math.sin(now*.0013):1.5*Math.sin(now*.0007));
+  S.bpm+=(target-S.bpm)*Math.min(1,dt*(S.scen==='tachy'?1.1:.7));
+  S.risk+=(sc.risk-S.risk)*Math.min(1,dt*.8);S.sqi+=(sc.sqi+.02*Math.sin(now*.002)-S.sqi)*Math.min(1,dt*2);
+  const irr=S.scen==='tachy'?1+.12*Math.sin(now*.0031):1;
+  const prev=S.phase;S.phase+=dt*S.bpm/60*irr;if(S.phase>=1){S.phase-=1;S.beat=1;}S.beat*=Math.pow(.02,dt);
+  acc+=dt;while(acc>1/70){sample(now);acc-=1/70;}
+  logic(now);
+  // camera / orbit
+  if(S.auto&&!drag&&!S.viewAnim){S.yaw+=dt*.32;S.tYaw=S.yaw;}
+  S.yaw+=(S.tYaw-S.yaw)*Math.min(1,dt*5);S.pitch+=(S.tPitch-S.pitch)*Math.min(1,dt*5);
+  pivot.rotation.set(S.pitch,S.yaw,0);
+  pivot.position.y=reduce?0:Math.sin(now*.0011)*.06;
+  if(device){const buzz=S.alert&&!reduce?Math.sin(now*.09)*.03*S.beat:0;device.position.x=buzz;}
+  camera.position.set(0,1.1,S.dist);camera.lookAt(0,-.2,0);
+  // sensors
+  if(parts.leds){const lvl=.75+.25*Math.sin(now*.05)+.2*S.beat;parts.leds.forEach(m=>m.material.color.setRGB(.27*lvl*2.2,.94*lvl*2.2,.63*lvl*2.2));
+    const facing=Math.max(0,-Math.cos(S.yaw)*Math.cos(S.pitch));parts.glow.material.opacity=facing*(.55+.3*S.beat);
+    const op=1-.88*Math.min(1,facing*1.4);M.strapMat.opacity=M.buckleMat.opacity=M.hole.opacity=op;M.strapMat.depthWrite=M.buckleMat.depthWrite=op>.95;}
+  draw(now);
+  // readouts (throttled)
+  if(!frame.t||now-frame.t>150){frame.t=now;$('#rBpm').textContent=Math.round(S.bpm);$('#rSqi').textContent=Math.round(S.sqi*100);$('#rRisk').textContent=Math.round(S.risk);
+    $('#rBpm').style.color=S.alert?'var(--pulse)':S.bpm>120?'var(--warn)':'';setStatus();}
+  renderer.render(scene,camera);requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+<script>
+/* ---------- 2. LAYER-BY-LAYER TEARDOWN ---------- */
+(function(){
+const $=s=>document.querySelector(s);
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------------- content ---------------- */
+const LAYERS=[
+ {id:'glass',name:'Cover glass',short:'Sapphire · 0.6 mm',mm:{watch:.6,band:.5},mat:'Sapphire crystal, oleophobic coat',
+  body:'The top layer is scratch-resistant sapphire at 9 on the Mohs scale. An oleophobic coating keeps fingerprints off so the heart-rate number stays readable in sunlight.',
+  facts:[['Hardness','Mohs 9'],['Coating','Anti-fingerprint, anti-reflective']],link:'Protects the always-on BPM readout you see on the Heart Rate page.'},
+ {id:'touch',name:'Touch layer',short:'Capacitive grid · 0.1 mm',mm:{watch:.1,band:.1},mat:'On-cell ITO sensor grid',
+  body:'A fine grid of transparent electrodes senses your finger. It rejects water drops so sweat during a workout does not trigger taps.',
+  facts:[['Scan rate','60 Hz'],['Mode','Wet-finger rejection']],link:'Swipe between Heart, Risk, 7-day and SOS screens.'},
+ {id:'display',name:'AMOLED display',short:{watch:'1.43″ · 466 × 466',band:'1.62″ · 192 × 490'},mm:{watch:.8,band:.7},mat:'AMOLED panel, 1000 nits',
+  body:'Each pixel makes its own light, so black areas are fully off. That keeps an always-on heart rate cheap on battery by dropping to 1 Hz refresh when idle.',
+  facts:[['Brightness','Up to 1000 nits'],['Always-on','1 Hz low-power mode']],link:'Shows the same risk score and alerts as the Dashboard.'},
+ {id:'frame',name:'Midframe + SOS crown',short:'Aluminium · SOS crown',mm:{watch:2.1,band:1.8},mat:'6000-series aluminium unibody',
+  body:'The unibody frame holds everything together and carries the antenna gap. The crown has a red ring: hold it for 3 seconds to start an SOS countdown.',
+  facts:[['Water rating','5 ATM'],['SOS','Hold 3 s, 5 s cancel window']],link:'Triggers the Emergency page flow: contacts, nearest hospital, ambulance.'},
+ {id:'pcb',name:'Logic board',short:'BLE 5.3 · IMU · PMIC',mm:{watch:1.2,band:1.1},mat:'8-layer HDI board with RF shield',
+  body:'The main board runs the signal filtering on the wrist. It holds a Bluetooth 5.3 chip, a 6-axis motion sensor, power management, 64 MB flash and the haptic motor.',
+  facts:[['Radio','Bluetooth LE 5.3'],['Motion','6-axis accel + gyro'],['Haptics','Linear resonant motor']],link:'The motion sensor is what tells a workout from a resting spike before any doctor request is sent.'},
+ {id:'battery',name:'Battery',short:{watch:'305 mAh Li-ion',band:'180 mAh Li-ion'},mm:{watch:3.2,band:3.0},mat:'Li-ion pouch cell, 3.87 V',
+  body:'A flat lithium-ion pouch cell fills the middle of the case. The target is 7 days with continuous heart rate once a second.',
+  facts:[['Target life','7 days (watch), 10 days (band)'],['Charging','Magnetic pogo, 0–80% in 45 min']],link:'Battery level is reported to the app so the family card can flag a dead device.'},
+ {id:'sensor',name:'Optical sensor',short:'4 × green · red / IR · 2 PDs',mm:{watch:.9,band:.9},mat:'LED + photodiode module',
+  body:'Four green LEDs at 525 nm shine into the skin. Two photodiodes read how much light comes back, which changes with every heartbeat. Red and infrared LEDs add blood oxygen.',
+  facts:[['Wavelengths','525 / 660 / 940 nm'],['Sampling','25–100 Hz, SQI-gated']],link:'Replaces the 25-second finger-on-camera scan with continuous PPG.'},
+ {id:'back',name:'Back cover',short:'Ceramic · sensor window',mm:{watch:1.8,band:1.7},mat:'Zirconia ceramic, Fresnel lens',
+  body:'The skin side is ceramic, which is smooth and does not block radio signals. A Fresnel lens over the sensor focuses the light, and two gold pins take the charger.',
+  facts:[['Lens','Fresnel, curved'],['Charging','2 gold pogo pins']],link:'Good skin contact here is what raises signal quality above the alert threshold.'},
+ {id:'strap',name:'Strap',short:{watch:'FKM rubber · 22 mm',band:'FKM rubber · 16 mm'},mm:{watch:0,band:0},mat:'Fluoroelastomer, quick-release pins',
+  body:'A soft fluoroelastomer strap keeps the sensor pressed evenly on the wrist. Quick-release pins let you swap it without tools.',
+  facts:[['Fit','Pin-and-tuck, 7 holes'],['Release','Tool-free spring bars']],link:'A loose strap is the most common cause of bad readings, so the app nudges you to tighten it.'}
+];
+const val=(v,f)=>typeof v==='object'?v[f]:v;
+
+/* keyframes: one per step */
+const KEYS=[{e:0,f:-1,yaw:.75,pitch:.5,dist:15}, {e:1,f:-1,yaw:.55,pitch:.3,dist:21}];
+LAYERS.forEach((L,i)=>KEYS.push({e:1,f:i,yaw:.55+(i%2?.35:-.2),pitch:(L.id==='sensor'||L.id==='back')?-.55:.34,dist:L.id==='strap'?18:12.5}));
+KEYS.push({e:0,f:-1,yaw:.75+Math.PI*2,pitch:.45,dist:15});
+
+/* build steps */
+const stepsEl=$('#steps');
+function stepHTML(){
+  const F=S.form;let h='';
+  h+=`<section class="step"><div class="card"><div class="k">Assembled</div><h2>${F==='watch'?'44 mm watch':'Slim band'}, ${F==='watch'?'10.7':'9.8'} mm thick</h2><p>Everything PulseGuard needs to watch your heart sits in this stack. Scroll down and it comes apart one layer at a time.</p></div></section>`;
+  h+=`<section class="step"><div class="card"><div class="k">Exploded</div><h2>Nine layers</h2><p>From top to bottom: what you touch, what you see, what thinks, what powers it, what measures, and what holds it on your wrist.</p></div></section>`;
+  LAYERS.forEach((L,i)=>{h+=`<section class="step"><div class="card"><div class="k">Layer ${String(i+1).padStart(2,'0')} of 09</div><h2>${L.name}</h2><p>${L.body}</p><dl>${L.facts.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl><div class="link"><strong>In PulseGuard:</strong> ${L.link}</div></div></section>`;});
+  h+=`<section class="step"><div class="card"><div class="k">Back together</div><h2>One device, one job</h2><p>Glass, sensor and strap all serve the same loop: measure continuously, check the signal, and only call the doctor when the numbers and the motion data agree.</p></div></section>`;
+  stepsEl.innerHTML=h;
+}
+function specTable(){
+  const F=S.form;let tot=0;
+  $('#specBody').innerHTML=LAYERS.filter(L=>L.id!=='strap').map((L,i)=>{const mm=L.mm[F];tot+=mm;return `<tr><td class="n">${String(i+1).padStart(2,'0')}</td><td>${L.name}</td><td>${L.mat}</td><td class="num">${mm.toFixed(1)} mm</td></tr>`;}).join('');
+  $('#specTotal').textContent=tot.toFixed(1)+' mm';
+  $('#specNote').textContent='Layer thickness from top to bottom for the '+F+'. Switch form factor above to compare.';
+}
+
+/* ---------------- state ---------------- */
+const S={form:'watch',e:0,yaw:.75,pitch:.5,dist:15,ty:0,dimW:LAYERS.map(()=>1),dragYaw:0,dragPitch:0,f:0};
+
+/* ---------------- three ---------------- */
+const stage=$('#tdStage');
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
+stage.prepend(renderer.domElement);
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(32,1,.1,200);
+(function(){const pm=new THREE.PMREMGenerator(renderer),env=new THREE.Scene();
+  env.add(new THREE.Mesh(new THREE.SphereGeometry(20,32,16),new THREE.MeshBasicMaterial({color:0x0b1113,side:THREE.BackSide})));
+  const P=(r,g,b,x,y,z,w,h)=>{const m=new THREE.MeshBasicMaterial({side:THREE.DoubleSide});m.color.setRGB(r,g,b);const p=new THREE.Mesh(new THREE.PlaneGeometry(w,h),m);p.position.set(x,y,z);p.lookAt(0,0,0);env.add(p);};
+  P(2.6,2.6,2.7,0,13,2,16,8);P(1.5,1.6,1.7,-12,3,7,6,12);P(1,1.1,1.2,11,4,8,5,9);P(1.6,.45,.5,9,0,-10,6,10);P(.3,.4,.45,0,-12,0,20,20);
+  scene.environment=pm.fromScene(env,.04).texture;})();
+const key=new THREE.DirectionalLight(0xffffff,.55);key.position.set(-4,8,6);scene.add(key);
+const root=new THREE.Group();scene.add(root);
+
+/* helpers */
+function rr(w,h,r){const s=new THREE.Shape(),x=-w/2,y=-h/2;r=Math.max(.01,Math.min(r,w/2,h/2));
+  s.moveTo(x+r,y);s.lineTo(x+w-r,y);s.absarc(x+w-r,y+r,r,-Math.PI/2,0);s.lineTo(x+w,y+h-r);s.absarc(x+w-r,y+h-r,r,0,Math.PI/2);
+  s.lineTo(x+r,y+h);s.absarc(x+r,y+h-r,r,Math.PI/2,Math.PI);s.lineTo(x,y+r);s.absarc(x+r,y+r,r,Math.PI,Math.PI*1.5);return s;}
+function slab(shape,t,bev,cs){const g=new THREE.ExtrudeGeometry(shape,{depth:Math.max(.001,t-2*bev),bevelEnabled:bev>0,bevelThickness:bev,bevelSize:bev,bevelSegments:bev>0?6:0,curveSegments:cs||36});
+  g.rotateX(-Math.PI/2);g.translate(0,bev,0);return g;} // spans y: 0..t
+function flatPlane(w,h,r){const g=new THREE.ShapeGeometry(rr(w,h,r),36);const p=g.attributes.position,uv=g.attributes.uv;for(let i=0;i<p.count;i++)uv.setXY(i,(p.getX(i)+w/2)/w,(p.getY(i)+h/2)/h);g.rotateX(-Math.PI/2);return g;}
+function capTex(canvas,w,h){const t=new THREE.CanvasTexture(canvas);t.encoding=THREE.sRGBEncoding;t.anisotropy=8;t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping;t.repeat.set(1/w,1/h);t.offset.set(.5,.5);return t;}
+function cvs(w,h,fn){const c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'),w,h);return c;}
+function strapGeo(curve,width,thick,segs){const n=20,prof=[];for(let i=0;i<n;i++){const a=i/n*Math.PI*2,c=Math.cos(a),s=Math.sin(a);prof.push([Math.sign(c)*Math.pow(Math.abs(c),.3)*width/2,Math.sign(s)*Math.pow(Math.abs(s),.3)*thick/2]);}
+  const pos=[],idx=[],X=new THREE.Vector3(1,0,0);
+  for(let j=0;j<=segs;j++){const t=j/segs,p=curve.getPointAt(t),T=curve.getTangentAt(t),N=new THREE.Vector3().crossVectors(T,X).normalize();for(const[u,v]of prof)pos.push(p.x+u,p.y+N.y*v,p.z+N.z*v);}
+  for(let j=0;j<segs;j++)for(let i=0;i<n;i++){const a=j*n+i,b=j*n+(i+1)%n,c=(j+1)*n+i,d=(j+1)*n+(i+1)%n;idx.push(a,c,b,b,c,d);}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();return g;}
+
+/* textures (shared) */
+const pcbCanvas=cvs(512,640,(g,W,H)=>{g.fillStyle='#0c3a2b';g.fillRect(0,0,W,H);let s=7;const r=()=>(s=(s*9301+49297)%233280)/233280;
+  g.strokeStyle='rgba(217,180,106,.55)';g.lineWidth=2;for(let i=0;i<90;i++){let x=r()*W,y=r()*H;g.beginPath();g.moveTo(x,y);for(let k=0;k<4;k++){if(k%2)x+=(r()-.5)*220;else y+=(r()-.5)*220;g.lineTo(x,y);}g.stroke();}
+  g.fillStyle='rgba(217,180,106,.8)';for(let i=0;i<140;i++){g.fillRect(r()*W,r()*H,5,5);}
+  g.fillStyle='rgba(230,240,235,.7)';g.font='600 22px monospace';g.fillText('PG-W1  REV C',30,H-30);g.font='16px monospace';g.fillText('U1 SoC',210,190);g.fillText('BT1',60,90);});
+const batCanvas=cvs(512,640,(g,W,H)=>{const gr=g.createLinearGradient(0,0,W,H);gr.addColorStop(0,'#c9d1d7');gr.addColorStop(1,'#9aa6ae');g.fillStyle=gr;g.fillRect(0,0,W,H);
+  g.fillStyle='#ff4d5e';g.fillRect(0,110,W,26);g.fillStyle='#10171b';g.font='700 44px sans-serif';g.textAlign='center';g.fillText('PulseGuard',W/2,230);
+  g.font='500 30px monospace';g.fillText('Li-ion  3.87 V',W/2,310);g.fillText(S.form==='band'?'180 mAh  0.70 Wh':'305 mAh  1.18 Wh',W/2,360);g.font='22px monospace';g.fillStyle='#39464d';g.fillText('Do not puncture · Do not heat',W/2,440);g.fillText('PG-BAT-01',W/2,480);});
+const gridCanvas=cvs(512,512,(g,W,H)=>{g.clearRect(0,0,W,H);g.strokeStyle='rgba(120,220,255,.55)';g.lineWidth=2;for(let i=0;i<=W;i+=24){g.beginPath();g.moveTo(i,0);g.lineTo(i,H);g.stroke();g.beginPath();g.moveTo(0,i);g.lineTo(W,i);g.stroke();}});
+const scr={c:document.createElement('canvas')};scr.g=scr.c.getContext('2d');scr.t=new THREE.CanvasTexture(scr.c);scr.t.encoding=THREE.sRGBEncoding;scr.t.anisotropy=8;
+const glowTex=new THREE.CanvasTexture(cvs(128,128,(g)=>{const gr=g.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(120,255,190,1)');gr.addColorStop(.3,'rgba(70,240,160,.4)');gr.addColorStop(1,'rgba(70,240,160,0)');g.fillStyle=gr;g.fillRect(0,0,128,128);}));
+
+/* ---------------- build ---------------- */
+let groups=[],mats=[],anchors=[],strapHalves=[],glow=null;
+const DIM={watch:{w:3.9,h:4.6,r:1.15,strapW:3.0},band:{w:2.15,h:4.5,r:1.02,strapW:1.8}};
+// assembled base y and exploded offset per layer
+const BASE_Y={glass:.49,touch:.487,display:.42,frame:-.42,pcb:.1,battery:-.24,sensor:-.37,back:-.58,strap:0};
+const EXP={glass:3.3,touch:2.65,display:2.0,frame:.9,pcb:0,battery:-1.05,sensor:-2.05,back:-3.0,strap:.9};
+function M(o){const m=new THREE.MeshPhysicalMaterial(Object.assign({transparent:true},o));m.userData.base=m.opacity;return m;}
+function build(){
+  groups.forEach(g=>{root.remove(g);g.traverse(o=>{if(o.geometry)o.geometry.dispose();});});
+  groups=[];mats=[];anchors=[];strapHalves=[];
+  const D=DIM[S.form],{w,h,r}=D;
+  // redraw battery label for form
+  const bg=batCanvas.getContext('2d');bg.fillStyle='#b3bdc4';bg.fillRect(0,330,512,40);bg.fillStyle='#10171b';bg.font='500 30px monospace';bg.textAlign='center';bg.fillText(S.form==='band'?'180 mAh  0.70 Wh':'305 mAh  1.18 Wh',256,360);
+  LAYERS.forEach((L,i)=>{const G=new THREE.Group();G.userData.id=L.id;root.add(G);groups.push(G);mats.push([]);});
+  const add=(i,geo,mat,pos)=>{const m=new THREE.Mesh(geo,mat);if(pos)m.position.set(...pos);groups[i].add(m);(Array.isArray(mat)?mat:[mat]).forEach(x=>{if(!mats[i].includes(x))mats[i].push(x);});return m;};
+  const metal=()=>M({color:S.form==='watch'?0x3b4045:0x2f3438,metalness:1,roughness:.3});
+  // 0 glass
+  add(0,slab(rr(w-.12,h-.12,r-.06),.1,.035),M({color:0xdfefff,metalness:0,roughness:.03,clearcoat:1,opacity:.22,depthWrite:false,envMapIntensity:1.6}));
+  anchors[0]=[w/2-.1,.1];
+  // 1 touch grid
+  const tw=w-.5,th=h-.5;add(1,flatPlane(tw,th,r-.25),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(gridCanvas),transparent:true,opacity:.75,depthWrite:false,side:THREE.DoubleSide}));
+  mats[1][0].userData.base=.75;anchors[1]=[tw/2,0];
+  // 2 display
+  const dw=w-.55,dh=h-.55;add(2,slab(rr(dw,dh,r-.28),.06,0),M({color:0x050607,roughness:.4}));
+  const sp=add(2,flatPlane(dw-.12,dh-.12,r-.33),new THREE.MeshBasicMaterial({map:scr.t,toneMapped:false,transparent:true}),[0,.062,0]);mats[2][1].userData.base=1;
+  scr.c.width=Math.round((dw-.12)*170);scr.c.height=Math.round((dh-.12)*170);scr.t.needsUpdate=true;anchors[2]=[dw/2,.03];
+  // 3 frame ring + crown
+  const ring=rr(w-.24,h-.24,r-.12);ring.holes.push(rr(w-.5,h-.5,r-.25));const fm=metal();
+  add(3,slab(ring,.9,.12),fm);
+  if(S.form==='watch'){const cr=add(3,new THREE.CylinderGeometry(.3,.3,.34,40),fm,[w/2+.12,.45,-.55]);cr.rotation.z=Math.PI/2;
+    const rg=add(3,new THREE.CylinderGeometry(.31,.31,.06,40),M({color:0xff4d5e,roughness:.35,emissive:0x40080c}),[w/2+.27,.45,-.55]);rg.rotation.z=Math.PI/2;
+    add(3,new THREE.BoxGeometry(.1,.26,.8),fm,[w/2+.02,.45,.7]);}
+  else{add(3,new THREE.CylinderGeometry(.09,.09,.02,24),M({color:0xff4d5e,emissive:0x40080c}),[0,.9,h/2-.35]);}
+  anchors[3]=[w/2+(S.form==='watch'?.3:0),.45];
+  // 4 pcb + parts
+  const pw=w-.6,ph=h-.8;const pcbMat=M({map:capTex(pcbCanvas,pw,ph),roughness:.5,metalness:.1}),pcbSide=M({color:0x0a2a20,roughness:.6});
+  add(4,slab(rr(pw,ph,Math.max(.2,r-.4)),.06,0),[pcbMat,pcbSide]);
+  const chip=M({color:0x111315,roughness:.35}),shield=M({color:0xb8c0c6,metalness:1,roughness:.25}),goldM=M({color:0xd9b46a,metalness:1,roughness:.3});
+  const sx=S.form==='watch'?1:.5;
+  add(4,new THREE.BoxGeometry(.85*sx+.2,.1,.85),chip,[0,.11,-.25]);
+  add(4,new THREE.BoxGeometry(1.1*sx,.16,.7),shield,[0,.14,.75]);
+  add(4,new THREE.BoxGeometry(.35,.07,.35),chip,[pw/2-.45,.095,-1.0]);
+  add(4,new THREE.BoxGeometry(.3,.06,.45),chip,[-pw/2+.4,.09,-1.05]);
+  const lra=add(4,new THREE.CylinderGeometry(.34*sx+.05,.34*sx+.05,.18,32),shield,[-(pw/2-.55*sx-.05),.15,1.55*(ph/3.8)]);
+  add(4,new THREE.BoxGeometry(.18,.03,1.2),goldM,[pw/2-.2,.075,.2]);
+  anchors[4]=[pw/2,.1];
+  // 5 battery
+  const bw=w-.85,bh=h-1.3;add(5,slab(rr(bw,bh,Math.max(.2,r-.45)),.28,.05),[M({map:capTex(batCanvas,bw,bh),metalness:.4,roughness:.35}),M({color:0xa7b1b8,metalness:.6,roughness:.35})]);
+  anchors[5]=[bw/2,.14];
+  // 6 sensor module (LEDs face down)
+  const rb=Math.min(w,h)*(S.form==='watch'?.34:.33);
+  add(6,new THREE.CylinderGeometry(rb,rb,.05,48),M({color:0x0c3a2b,roughness:.5}));
+  const led=new THREE.MeshBasicMaterial({color:0x46f0a0,toneMapped:false,transparent:true});led.userData.base=1;mats[6].push(led);
+  const off=rb*.45;[[off,0],[-off,0],[0,off],[0,-off]].forEach(([x,z])=>add(6,new THREE.BoxGeometry(.16,.05,.16),led,[x,-.045,z]));
+  const red=new THREE.MeshBasicMaterial({color:0xff3344,toneMapped:false,transparent:true});red.userData.base=1;mats[6].push(red);
+  add(6,new THREE.BoxGeometry(.1,.04,.1),red,[off*.7,-.04,off*.7]);add(6,new THREE.BoxGeometry(.1,.04,.1),M({color:0x3a1420}),[-off*.7,-.04,-off*.7]);
+  const pd=M({color:0x2a1f4a,roughness:.2,metalness:.3});add(6,new THREE.BoxGeometry(.22,.04,.22),pd,[-off*.7,-.04,off*.7]);add(6,new THREE.BoxGeometry(.22,.04,.22),pd,[off*.7,-.04,-off*.7]);
+  glow=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:0}));glow.scale.set(rb*3,rb*3,1);glow.position.y=-.35;groups[6].add(glow);
+  anchors[6]=[rb,0];
+  // 7 back cover
+  const cer=M({color:0x15191c,roughness:.18,clearcoat:1,metalness:0});
+  add(7,slab(rr(w-.3,h-.3,r-.15),.2,.06),cer);
+  add(7,new THREE.CylinderGeometry(rb*1.05,rb*.92,.14,56),M({color:0x0a0d0f,roughness:.05,clearcoat:1}),[0,-.07,0]);
+  const tr=add(7,new THREE.TorusGeometry(rb*1.06,.03,10,56),shield,[0,-.01,0]);tr.rotation.x=Math.PI/2;
+  [-.25,.25].forEach(x=>add(7,new THREE.CylinderGeometry(.07,.07,.04,16),goldM,[x,-.02,-(h/2-.55)]));
+  anchors[7]=[w/2-.15,.1];
+  // 8 strap halves
+  const smat=M({color:0x1c2023,roughness:.72,clearcoat:.1,envMapIntensity:.35,side:THREE.DoubleSide}),hz=h/2;
+  const mk=(sgn)=>{const pts=[[.05,hz-.5],[.02,hz+.2],[-.3,hz+1.0],[-1.15,hz+1.62],[-2.35,hz+1.85]].map(([y,z])=>new THREE.Vector3(0,y,z*sgn));return new THREE.CatmullRomCurve3(pts,false,'centripetal');};
+  [1,-1].forEach(sgn=>{const G=new THREE.Group();groups[8].add(G);strapHalves.push({G,sgn});const c=mk(sgn);const m=new THREE.Mesh(strapGeo(c,D.strapW,.24,120),smat);G.add(m);
+    if(sgn>0){const hm=M({color:0x050505});for(let k=0;k<7;k++){const t=.45+k*.075,p=c.getPointAt(t),T=c.getTangentAt(t),N=new THREE.Vector3().crossVectors(T,new THREE.Vector3(1,0,0)).normalize();if(N.y<0)N.negate();
+      const d=new THREE.Mesh(new THREE.CircleGeometry(.06,16),hm);d.position.copy(p).addScaledVector(N,.125);d.lookAt(p.clone().addScaledVector(N,2));G.add(d);}mats[8].push(hm);}
+    else{const bs=rr(D.strapW+.3,.6,.13);bs.holes.push(rr(D.strapW+.04,.32,.05));const bgeo=new THREE.ExtrudeGeometry(bs,{depth:.1,bevelEnabled:true,bevelThickness:.03,bevelSize:.03,bevelSegments:3});bgeo.translate(0,0,-.05);
+      const t=.97,p=c.getPointAt(t),T=c.getTangentAt(t),X=new THREE.Vector3(1,0,0),N=new THREE.Vector3().crossVectors(T,X).normalize();const b=new THREE.Mesh(bgeo,shield);b.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(X,T,N));b.position.copy(p);G.add(b);}
+  });
+  mats[8].push(smat,shield);
+  anchors[8]=null;
+  groups.forEach((G,i)=>{G.userData.base=BASE_Y[LAYERS[i].id];});
+  buildLabels();
+}
+
+/* ---------------- labels ---------------- */
+const labelsEl=$('#labels'),linesEl=$('#lines');let labelEls=[],lineEls=[];
+function buildLabels(){labelsEl.innerHTML='';linesEl.innerHTML='';labelEls=[];lineEls=[];
+  LAYERS.forEach((L,i)=>{const d=document.createElement('div');d.className='lbl';d.innerHTML=`<span class="n">${String(i+1).padStart(2,'0')}</span><b>${L.name}</b><span class="sub">${val(L.short,S.form)}</span>`;labelsEl.appendChild(d);labelEls.push(d);
+    const ln=document.createElementNS('http://www.w3.org/2000/svg','polyline');ln.setAttribute('fill','none');ln.setAttribute('stroke','#8b9ba2');ln.setAttribute('stroke-width','1');linesEl.appendChild(ln);lineEls.push(ln);
+    const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');dot.setAttribute('r','2.5');dot.setAttribute('fill','#ff4d5e');linesEl.appendChild(dot);ln.dot=dot;});}
+const V=new THREE.Vector3();
+function placeLabels(W,H){
+  const show=Math.max(0,Math.min(1,(S.e-.55)/.4));const narrow=W<560;const pts=[];
+  LAYERS.forEach((L,i)=>{const G=groups[i];let wp;
+    if(L.id==='strap'){const hf=strapHalves[0];wp=new THREE.Vector3(DIM[S.form].strapW/2,-1.15,(DIM[S.form].h/2+1.62)).add(hf.G.position).add(G.position);}
+    else{const a=anchors[i];wp=new THREE.Vector3(a[0],a[1],0).add(G.position);}
+    V.copy(wp).project(camera);pts.push({i,x:(V.x*.5+.5)*W,y:(-V.y*.5+.5)*H});});
+  const lx=narrow?W-16:W*.72;const sorted=[...pts].sort((a,b)=>a.y-b.y);let lastY=-1e9;const gap=narrow?0:40;
+  sorted.forEach(p=>{p.ly=Math.max(p.y,lastY+gap);lastY=p.ly;});
+  const over=lastY-(H-40);if(over>0)sorted.forEach(p=>p.ly-=over);
+  pts.forEach(p=>{const el=labelEls[p.i],ln=lineEls[p.i],w=S.dimW[p.i];const focused=S.f===p.i;
+    let op=show*(narrow?(focused?1:0):(.35+.65*w));
+    el.classList.toggle('on',focused);el.style.opacity=op.toFixed(3);
+    if(narrow){el.style.transform=`translate(16px,44px)`;ln.style.opacity=0;ln.dot.setAttribute('cx',p.x);ln.dot.setAttribute('cy',p.y);ln.dot.style.opacity=op;return;}
+    const x=Math.min(lx,W-200);el.style.transform=`translate(${x}px,${p.ly}px) translateY(-50%)`;
+    const x0=p.x,x1=x-8;ln.setAttribute('points',`${x0},${p.y} ${x0+(x1-x0)*.35},${p.ly} ${x1},${p.ly}`);ln.style.opacity=op;ln.setAttribute('stroke',focused?'#ff4d5e':'#8b9ba2');ln.dot.setAttribute('cx',x0);ln.dot.setAttribute('cy',p.y);ln.dot.style.opacity=op;});
+}
+
+/* ---------------- screen ---------------- */
+const wave=new Array(160).fill(.2);let phase=0;
+function drawScreen(now,dt){const g=scr.g,W=scr.c.width,H=scr.c.height,narrow=W/H<.6,fs=k=>k*Math.min(W/100,H/125);
+  phase+=dt*72/60;let beat=0;if(phase>=1){phase-=1;}beat=Math.exp(-phase*8);
+  const gs=(x,m,s)=>Math.exp(-((x-m)*(x-m))/(2*s*s));wave.push(.1+.8*(gs(phase,.2,.07)+.38*gs(phase,.46,.08)));wave.shift();
+  g.fillStyle='#000';g.fillRect(0,0,W,H);g.textAlign='center';g.textBaseline='middle';
+  const d=new Date();g.fillStyle='#b9c5ca';g.font='500 '+fs(narrow?9:6.4)+'px "IBM Plex Mono",monospace';g.fillText(String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'),W/2,H*.08);
+  g.fillStyle='#ff4d5e';const s=fs(narrow?7:4.6)*(1+beat*.18),x=W/2,y=H*.2;g.beginPath();g.moveTo(x,y+s*.35);g.bezierCurveTo(x-s*1.1,y-s*.35,x-s*.45,y-s*1.05,x,y-s*.45);g.bezierCurveTo(x+s*.45,y-s*1.05,x+s*1.1,y-s*.35,x,y+s*.35);g.fill();
+  g.fillStyle='#f2f6f7';g.font='700 '+fs(narrow?40:31)+'px "Chakra Petch",sans-serif';g.fillText('72',W/2,H*(narrow?.37:.41));
+  g.fillStyle='#8b9ba2';g.font='500 '+fs(narrow?8.5:5.4)+'px "IBM Plex Mono",monospace';g.fillText(narrow?'BPM':'BPM · resting',W/2,H*(narrow?.47:.535));
+  const x0=W*.08,x1=W*.92,y0=H*.6,y1=H*.82;g.strokeStyle='#46f0a0';g.lineWidth=fs(narrow?1.6:1.1);g.beginPath();wave.forEach((v,i)=>{const X=x0+(x1-x0)*i/(wave.length-1),Y=y1-(y1-y0)*v;i?g.lineTo(X,Y):g.moveTo(X,Y);});g.stroke();
+  g.fillStyle='#8b9ba2';g.font='500 '+fs(narrow?7.5:4.8)+'px "IBM Plex Mono",monospace';g.fillText(narrow?'SQI 94%':'SIGNAL 94%  ·  SpO₂ 98%',W/2,H*.915);
+  scr.t.needsUpdate=true;}
+
+/* ---------------- scroll mapping ---------------- */
+let centers=[];
+function measure(){const narrow=innerWidth<=860;const steps=[...stepsEl.children];centers=steps.map(s=>{const r=(narrow?s.querySelector('.card'):s).getBoundingClientRect();return r.top+scrollY+(narrow?0:r.height/2);});}
+const sm=x=>x*x*(3-2*x);
+function scrollPos(){if(!centers.length)return 0;const narrow=innerWidth<=860;const line=scrollY+innerHeight*(narrow?.62:.5);
+  if(line<=centers[0])return 0;const n=centers.length-1;if(line>=centers[n])return n;
+  for(let i=0;i<n;i++)if(line<centers[i+1]){const fr=(line-centers[i])/(centers[i+1]-centers[i]);return i+sm(Math.max(0,Math.min(1,(fr-.15)/.7)));}return n;}
+function target(fpos){const i=Math.floor(fpos),fr=fpos-i,a=KEYS[Math.min(i,KEYS.length-1)],b=KEYS[Math.min(i+1,KEYS.length-1)];
+  const L=(p,q)=>p+(q-p)*fr;const dimOf=k=>LAYERS.map((_,j)=>k.f<0||k.f===j?1:.14);const da=dimOf(a),db=dimOf(b);
+  const tyOf=k=>k.f<0?(k.e>0?.2:0):BASE_Y[LAYERS[k.f].id]+EXP[LAYERS[k.f].id]*k.e+(LAYERS[k.f].id==='strap'?-1:0);
+  return{e:L(a.e,b.e),yaw:L(a.yaw,b.yaw),pitch:L(a.pitch,b.pitch),dist:L(a.dist,b.dist),ty:L(tyOf(a),tyOf(b)),dim:da.map((v,j)=>L(v,db[j])),f:fr<.5?a.f:b.f,idx:fr<.5?i:i+1};}
+
+/* ---------------- interaction ---------------- */
+let drag=null;
+stage.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,yaw:S.dragYaw,pitch:S.dragPitch,type:e.pointerType};stage.setPointerCapture(e.pointerId);});
+stage.addEventListener('pointermove',e=>{if(!drag)return;S.dragYaw=drag.yaw+(e.clientX-drag.x)*.008;if(drag.type==='mouse')S.dragPitch=Math.max(-.8,Math.min(.8,drag.pitch+(e.clientY-drag.y)*.005));});
+['pointerup','pointercancel'].forEach(t=>stage.addEventListener(t,()=>{drag=null;}));
+document.querySelectorAll('#tdForm button').forEach(b=>b.addEventListener('click',()=>{if(S.form===b.dataset.v)return;S.form=b.dataset.v;document.querySelectorAll('#tdForm button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));build();stepHTML();specTable();measure();}));
+function resize(){const r=stage.getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;camera.fov=camera.aspect<.9?44:32;camera.updateProjectionMatrix();measure();}
+new ResizeObserver(resize).observe(stage);addEventListener('resize',measure);
+
+/* ---------------- loop ---------------- */
+stepHTML();specTable();build();resize();
+let last=performance.now(),lastIdx=-1;
+function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!window.PG_VIS.td){requestAnimationFrame(frame);return;}
+  const T=target(scrollPos());const k=reduce?1:Math.min(1,dt*6);
+  S.e+=(T.e-S.e)*k;S.yaw+=(T.yaw-S.yaw)*k;S.pitch+=(T.pitch-S.pitch)*k;S.dist+=(T.dist-S.dist)*k;S.ty+=(T.ty-S.ty)*k;S.f=T.f;
+  S.dimW=S.dimW.map((v,j)=>v+(T.dim[j]-v)*k);
+  if(!drag&&!reduce){S.dragYaw*=Math.pow(.6,dt);S.dragPitch*=Math.pow(.6,dt);}
+  // layers
+  groups.forEach((G,i)=>{const id=LAYERS[i].id;G.position.y=G.userData.base+EXP[id]*S.e;const w=S.dimW[i];
+    mats[i].forEach(m=>{const b=m.userData.base==null?1:m.userData.base;m.opacity=b*w;m.depthWrite=(b*w>.95)&&!(id==='glass'||id==='touch');});});
+  strapHalves.forEach(h=>{h.G.position.z=h.sgn*1.15*S.e;});
+  if(glow){glow.material.opacity=S.dimW[6]*Math.max(0,-S.pitch*1.6)*(.7+.3*Math.sin(now*.006));}
+  // camera
+  const yaw=S.yaw+S.dragYaw,pitch=Math.max(-1.2,Math.min(1.2,S.pitch+S.dragPitch));
+  camera.position.set(Math.sin(yaw)*Math.cos(pitch)*S.dist,S.ty+Math.sin(pitch)*S.dist,Math.cos(yaw)*Math.cos(pitch)*S.dist);camera.lookAt(0,S.ty,0);
+  drawScreen(now,dt);
+  renderer.render(scene,camera);
+  const r=renderer.domElement;placeLabels(r.clientWidth,r.clientHeight);
+  // ui
+  if(T.idx!==lastIdx){lastIdx=T.idx;[...stepsEl.children].forEach((s,i)=>s.classList.toggle('active',i===T.idx));
+    $('#hudL').textContent=T.idx===0?'Assembled':T.idx===1?'Exploded · 9 layers':T.idx===KEYS.length-1?'Reassembled':('Layer '+String(T.idx-1).padStart(2,'0')+' · '+LAYERS[T.idx-2].name);}
+  $('#bar').style.width=(scrollPos()/(KEYS.length-1)*100).toFixed(1)+'%';
+  requestAnimationFrame(frame);}
+requestAnimationFrame(frame);
+})();
+</script>
+
+{% if current_user.is_authenticated %}
+<script src="/static/voice.js"></script>
+{% endif %}
+</body>
+
+
+</html>

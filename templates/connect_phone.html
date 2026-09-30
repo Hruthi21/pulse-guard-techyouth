@@ -1,0 +1,255 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>PulseGuard AI — Connect Phone</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="/static/pulseguard.css"/>
+  <style>
+    .pair-code{font-family:monospace;font-size:36px;font-weight:900;letter-spacing:10px;color:var(--primary);background:var(--darker);border:2px solid var(--primary);padding:18px 32px;border-radius:12px;display:inline-block;margin:16px 0;}
+    .step-row{display:flex;align-items:flex-start;gap:14px;margin-bottom:18px;}
+    .step-num{min-width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .status-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px;}
+    .dot-green{background:#1db954;}
+    .dot-orange{background:#f39c12;}
+    .dot-red{background:#e74c3c;}
+  </style>
+</head>
+<body>
+
+<aside class="pg-sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <i class="fas fa-heartbeat logo-icon"></i>
+    <span class="logo-text">PulseGuard AI</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="/" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+    <a href="/dashboard" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+    <a href="/heartrate" class="nav-item"><i class="fas fa-heartbeat"></i><span>Heart Rate (PPG)</span></a>
+    <a href="/connect-phone" class="nav-item active"><i class="fas fa-mobile-alt"></i><span>Connect Phone</span></a>
+    <a href="/diet" class="nav-item"><i class="fas fa-apple-alt"></i><span>Diet Planner</span></a>
+    <a href="/emergency" class="nav-item"><i class="fas fa-ambulance"></i><span>Emergency</span></a>
+    {% if current_user.is_authenticated %}
+    <a href="/logout" class="nav-item" style="color:#e74c3c;margin-top:14px;"><i class="fas fa-sign-out-alt"></i><span>Logout ({{ current_user.full_name.split()[0] }})</span></a>
+    {% endif %}
+  </nav>
+  <a href="/emergency" class="sidebar-sos"><i class="fas fa-exclamation-triangle"></i><span>SOS Emergency</span></a>
+</aside>
+
+<main class="pg-main">
+  <header class="pg-header">
+    <div>
+      <h1>Connect Phone</h1>
+      <div class="header-sub">Sync Health Connect step data from your Android phone to PulseGuard</div>
+    </div>
+    <a href="/dashboard" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Dashboard</a>
+  </header>
+
+  <div class="pg-content">
+    <div class="grid-2 fade-in" style="margin-bottom:24px;">
+
+      <!-- Pairing card -->
+      <div class="card">
+        <div class="section-title"><i class="fas fa-link"></i> Your Server &amp; Pairing Code</div>
+
+        <div id="status-banner" style="padding:12px 16px;border-radius:8px;margin-bottom:18px;font-size:13px;background:var(--darker);border:1px solid var(--card-border);">
+          <span class="status-dot dot-orange" id="status-dot"></span>
+          <span id="status-text">Checking connection...</span>
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">SERVER ADDRESS (paste into phone app)</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" id="server-url-display" class="pg-input" readonly value="" style="font-family:monospace;font-size:13px;"/>
+            <button class="pg-btn pg-btn-outline" onclick="copyUrl()" style="white-space:nowrap;"><i class="fas fa-copy"></i></button>
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px;">Find your PC IP: run <code style="background:var(--darker);padding:2px 6px;border-radius:4px;">ipconfig</code> in Command Prompt and use the WiFi IPv4 address.</div>
+        </div>
+
+        <div style="text-align:center;margin-bottom:20px;">
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:8px;">PAIRING CODE (expires never — regenerate if needed)</div>
+          <div class="pair-code" id="pair-code">{{ pairing.pairing_code }}</div>
+          <div style="font-size:12px;color:var(--muted);">Enter this code in the PulseGuard Sync Android app</div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="pg-btn pg-btn-primary" onclick="copyCode()"><i class="fas fa-copy"></i> Copy Code</button>
+          <button class="pg-btn pg-btn-outline" onclick="checkStatus()"><i class="fas fa-sync-alt"></i> Refresh Status</button>
+        </div>
+
+        {% if pairing.paired_at %}
+        <div style="margin-top:16px;padding:12px;background:#1db95410;border:1px solid #1db95444;border-radius:8px;font-size:13px;">
+          <i class="fas fa-mobile-alt" style="color:#1db954;"></i>
+          <strong>{{ pairing.device_name or "Android Phone" }}</strong> paired
+          {% if pairing.last_sync %}
+          &nbsp;&middot;&nbsp; Last sync: <span id="last-sync-time">{{ pairing.last_sync.strftime("%d %b %Y %H:%M") }}</span>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Setup steps card -->
+      <div class="card">
+        <div class="section-title"><i class="fas fa-list-ol"></i> Setup Guide (5 minutes)</div>
+
+        <div class="step-row">
+          <div class="step-num">A</div>
+          <div>
+            <strong>Phone Settings</strong>
+            <div style="font-size:13px;color:var(--muted);margin-top:4px;line-height:1.6;">
+              Install <strong>Health Connect</strong> from Play Store (Android 14+: Settings &rarr; Security &rarr; Health Connect).<br/>
+              In <strong>Google Fit</strong>: Profile &rarr; Settings &rarr; Health Connect &rarr; turn on.
+            </div>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">B</div>
+          <div>
+            <strong>Same Wi-Fi Network</strong>
+            <div style="font-size:13px;color:var(--muted);margin-top:4px;line-height:1.6;">
+              Phone and PC must be on the same Wi-Fi. For remote access, run <code style="background:var(--darker);padding:1px 5px;border-radius:3px;">ngrok http 5000</code> and use the https URL.
+            </div>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">C</div>
+          <div>
+            <strong>Install Android App</strong>
+            <div style="font-size:13px;color:var(--muted);margin-top:4px;line-height:1.6;">
+              Open Android Studio &rarr; File &rarr; Open &rarr; select the <code>android/</code> folder in this project. Click Run.
+            </div>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">D</div>
+          <div>
+            <strong>Pair &amp; Allow Permissions</strong>
+            <div style="font-size:13px;color:var(--muted);margin-top:4px;line-height:1.6;">
+              In the app, paste the server address and the pairing code above. Tap <em>Save</em>, then <em>Allow Health Connect access</em>, then <em>Sync now</em>.
+            </div>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num" style="background:#1db954;">5</div>
+          <div>
+            <strong>Done!</strong>
+            <div style="font-size:13px;color:var(--muted);margin-top:4px;line-height:1.6;">
+              The status above should change to <strong style="color:#1db954;">Connected</strong> within 5 seconds of tapping Sync now.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Today Steps Live -->
+    <div class="card fade-in" id="steps-live-card" style="margin-bottom:24px;">
+      <div class="section-title"><i class="fas fa-shoe-prints"></i> Today&apos;s Steps (Live from Phone)</div>
+      <div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap;">
+        <div style="text-align:center;">
+          <div style="font-size:52px;font-weight:900;color:var(--primary);" id="live-steps">—</div>
+          <div style="font-size:12px;color:var(--muted);">steps today</div>
+        </div>
+        <div style="flex:1;min-width:200px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">
+            <span style="color:var(--muted);">Progress to 8,000 goal</span>
+            <span id="steps-pct" style="font-weight:700;">0%</span>
+          </div>
+          <div style="height:12px;background:var(--darker);border-radius:6px;overflow:hidden;">
+            <div id="steps-bar" style="height:100%;border-radius:6px;background:var(--primary);width:0%;transition:width 0.8s ease;"></div>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:20px;font-size:13px;flex-wrap:wrap;">
+            <span><i class="fas fa-fire" style="color:#f39c12;"></i> <span id="live-cal">—</span> kcal</span>
+            <span><i class="fas fa-heartbeat" style="color:#e74c3c;"></i> <span id="live-hr">—</span> bpm avg</span>
+            <span><i class="fas fa-road" style="color:#3498db;"></i> <span id="live-dist">—</span> m</span>
+            <span><i class="fas fa-sync-alt" style="color:var(--muted);font-size:11px;"></i> <span id="live-sync" style="color:var(--muted);font-size:12px;">never</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<div class="pg-toast" id="pg-toast"></div>
+<script src="/static/pulseguard.js"></script>
+<script>
+var GOAL = 8000;
+
+function detectServerUrl() {
+  var url = window.location.origin;
+  document.getElementById("server-url-display").value = url;
+}
+
+function copyUrl() {
+  var v = document.getElementById("server-url-display").value;
+  navigator.clipboard.writeText(v).then(function() { showToast("Server address copied!", "success"); });
+}
+
+function copyCode() {
+  var code = document.getElementById("pair-code").textContent.trim();
+  navigator.clipboard.writeText(code).then(function() { showToast("Pairing code copied!", "success"); });
+}
+
+async function checkStatus() {
+  try {
+    var res = await fetch("/api/phone/status");
+    var d   = await res.json();
+    var dot  = document.getElementById("status-dot");
+    var txt  = document.getElementById("status-text");
+    if (d.paired) {
+      dot.className = "status-dot dot-green";
+      txt.innerHTML = "<strong style='color:#1db954;'>Connected</strong> — " +
+        (d.device_name || "Android Phone") +
+        (d.last_sync ? " &middot; Last sync: " + new Date(d.last_sync).toLocaleString() : "");
+    } else if (d.pairing_code) {
+      dot.className = "status-dot dot-orange";
+      txt.textContent = "Waiting for phone to pair — enter the code in the app.";
+    } else {
+      dot.className = "status-dot dot-red";
+      txt.textContent = "Not connected.";
+    }
+  } catch(e) {
+    document.getElementById("status-text").textContent = "Could not reach server.";
+  }
+}
+
+async function loadSteps() {
+  try {
+    var res = await fetch("/api/steps/today");
+    var d   = await res.json();
+    if (d.steps !== null && d.steps !== undefined) {
+      document.getElementById("live-steps").textContent = d.steps.toLocaleString();
+      var pct = Math.min(100, Math.round((d.steps / GOAL) * 100));
+      document.getElementById("steps-pct").textContent = pct + "%";
+      document.getElementById("steps-bar").style.width = pct + "%";
+      document.getElementById("steps-bar").style.background =
+        pct >= 100 ? "#1db954" : pct >= 60 ? "#f39c12" : "var(--primary)";
+    }
+    document.getElementById("live-cal").textContent  = d.calories  ? Math.round(d.calories)  : "—";
+    document.getElementById("live-hr").textContent   = d.heart_rate? d.heart_rate.toFixed(1)  : "—";
+    document.getElementById("live-dist").textContent = d.distance_m? Math.round(d.distance_m) : "—";
+    if (d.synced_at) {
+      document.getElementById("live-sync").textContent = "Synced " + new Date(d.synced_at).toLocaleTimeString();
+    }
+  } catch(e) {}
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  detectServerUrl();
+  checkStatus();
+  loadSteps();
+  setInterval(loadSteps, 30000);   // auto-refresh every 30 s
+  setInterval(checkStatus, 15000); // check connection status every 15 s
+});
+</script>
+
+{% if current_user.is_authenticated %}
+<script src="/static/voice.js"></script>
+{% endif %}
+</body>
+</html>

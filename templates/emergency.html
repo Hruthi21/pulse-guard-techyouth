@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>PulseGuard AI — Emergency Response</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="/static/pulseguard.css"/>
+</head>
+<body>
+
+<aside class="pg-sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <i class="fas fa-heartbeat logo-icon"></i>
+    <span class="logo-text">PulseGuard AI</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="/" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+    <a href="/dashboard" class="nav-item "><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+    <a href="/heartrate" class="nav-item "><i class="fas fa-heartbeat"></i><span>Heart Rate (PPG)</span></a>
+    <a href="/appointments" class="nav-item " style="color:#2ecc71;font-weight:600;"><i class="fas fa-video"></i><span>Doctor Video Call</span></a>
+    <a href="/doctor" class="nav-item " style="color:#3498db;font-weight:600;"><i class="fas fa-user-md"></i><span>Doctor Portal</span></a>
+    <a href="/reports" class="nav-item "><i class="fas fa-file-medical"></i><span>Reports & Family</span></a>
+    <a href="/chat" class="nav-item "><i class="fas fa-robot"></i><span>AI Assistant</span></a>
+    <a href="/lifestyle" class="nav-item "><i class="fas fa-running"></i><span>Lifestyle</span></a>
+    <a href="/diet" class="nav-item "><i class="fas fa-apple-alt"></i><span>Diet Analysis</span></a>
+    <a href="/emergency" class="nav-item active"><i class="fas fa-ambulance"></i><span>Emergency</span></a>
+    {% if current_user.is_authenticated %}
+    <a href="/logout" class="nav-item" style="color:#e74c3c; margin-top:14px;"><i class="fas fa-sign-out-alt"></i><span>Logout ({{ current_user.full_name.split()[0] }})</span></a>
+    {% else %}
+    <a href="/login" class="nav-item" style="color:#2ecc71; margin-top:14px;"><i class="fas fa-sign-in-alt"></i><span>Login</span></a>
+    <a href="/register" class="nav-item"><i class="fas fa-user-plus"></i><span>Register</span></a>
+    {% endif %}
+  </nav>
+  <a href="/emergency" class="sidebar-sos"><i class="fas fa-exclamation-triangle"></i><span>SOS Emergency</span></a>
+</aside>
+
+<main class="pg-main">
+  <header class="pg-header">
+    <div>
+      <h1>🚨 Emergency Response</h1>
+      <div class="header-sub">Real-time ambulance tracking — Bengaluru</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <span class="stat-pill" id="dispatch-status"><i class="fas fa-circle" style="color:var(--primary);font-size:8px;"></i> System Ready</span>
+      <a href="/dashboard" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Dashboard</a>     <a href="/heartrate" class="nav-item"><i class="fas fa-heartbeat"></i><span>Heart Rate</span></a>     <a href="/chat" class="nav-item"><i class="fas fa-robot"></i><span>AI Assistant</span></a>
+    </div>
+  </header>
+
+  <div class="pg-content">
+
+    <!-- Prominent Simulation Transparency Banner -->
+    <div style="background: rgba(243, 156, 18, 0.12); border: 1px solid rgba(243, 156, 18, 0.4); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 14px;" class="fade-in">
+      <i class="fas fa-exclamation-triangle" style="color: #f39c12; font-size: 24px; flex-shrink: 0;"></i>
+      <div style="font-size: 13px; line-height: 1.5; color: #e6e6e6;">
+        <strong style="color: #f39c12; text-transform: uppercase; letter-spacing: 0.5px;">Simulation & Demo Notice:</strong>
+        Ambulance fleet tracking, positions, and ETA estimations shown on this map are <strong>simulated demonstrations</strong>. 
+        In a real life-threatening emergency, <strong>always dial 112 immediately</strong> or go directly to the nearest hospital.
+        <span style="color:#2ecc71;">(Real SMS and voice alert calls are dispatched to your verified emergency contacts when SOS is pressed).</span>
+      </div>
+    </div>
+
+
+    <!-- TOP ROW: SOS + Stats -->
+    <div class="grid-4 fade-in" style="margin-bottom:24px;">
+      <div class="card" style="text-align:center;grid-column:span 1;">
+        <div class="card-title">Simulated Ambulances</div>
+        <div class="card-value" style="color:var(--primary);" id="amb-count">5</div>
+        <div class="card-sub"><span style="color:#f39c12; font-weight:700;">[DEMO FLEET]</span> Active in Demo</div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div class="card-title">Nearest Hospital</div>
+        <div style="font-size:14px;font-weight:700;" id="nearest-hosp-name">Victoria Hospital</div>
+        <div class="card-sub" id="nearest-hosp-dist">2.4 km away</div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div class="card-title">Est. Arrival Time</div>
+        <div class="card-value" id="eta-display" style="color:var(--warning);">—</div>
+        <div class="card-sub">minutes (nearest ambulance)</div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div class="card-title">Your Location</div>
+        <div style="font-size:13px;font-weight:600;" id="user-location-display">Bengaluru, KA</div>
+        <div class="card-sub" id="user-coords">12.9716°N, 77.5946°E</div>
+      </div>
+    </div>
+
+    <!-- MAIN: Map + SOS Panel -->
+    <div style="display:grid;grid-template-columns:1fr 360px;gap:24px;margin-bottom:24px;" class="fade-in" id="main-grid">
+
+      <!-- MAP -->
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--card-border);display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-weight:700;font-size:15px;"><i class="fas fa-map-marked-alt" style="color:var(--primary);margin-right:8px;"></i>Live Bengaluru Map</div>
+          <div style="display:flex;gap:10px;font-size:12px;color:var(--muted);">
+            <span>🔵 You</span>
+            <span>🔴 Ambulance</span>
+            <span>🏥 Hospital</span>
+          </div>
+        </div>
+        <div id="emergency-map"></div>
+      </div>
+
+      <!-- SOS PANEL -->
+      <div style="display:flex;flex-direction:column;gap:16px;">
+
+        <!-- SOS Button -->
+        <div class="card" style="text-align:center;padding:28px 20px;">
+          <div class="card-title" style="margin-bottom:16px;">Emergency SOS</div>
+          <div class="sos-btn-wrap">
+            <button class="sos-btn" id="sos-btn" onclick="triggerSOS()">
+              <i class="fas fa-exclamation-triangle"></i>
+              <span>SOS</span>
+            </button>
+          </div>
+          <p style="font-size:12px;color:var(--muted);margin-top:16px;line-height:1.6;">Press to alert emergency contacts, notify nearest hospital, and dispatch ambulance.</p>
+          <div id="sos-countdown" style="display:none;font-size:13px;color:var(--warning);margin-top:10px;font-weight:600;"></div>
+        </div>
+
+        <!-- Emergency contacts -->
+        <div class="card">
+          <div style="font-weight:700;margin-bottom:14px;font-size:14px;"><i class="fas fa-address-book" style="color:var(--primary);margin-right:6px;"></i>Emergency Contacts</div>
+          <div id="contacts-list">
+            {% if contacts %}
+              {% for c in contacts %}
+              <div class="hospital-card" style="cursor:default; {% if c.type == 'emergency' %}border-color:rgba(231,76,60,0.4);{% endif %}">
+                <div class="hospital-icon" style="{% if c.type == 'emergency' %}background:rgba(231,76,60,0.2); color:#e74c3c;{% else %}background:rgba(46,204,113,0.15); color:#2ecc71;{% endif %}">
+                  <i class="fas {{ c.icon }}"></i>
+                </div>
+                <div>
+                  <div class="hospital-name">{{ c.name }}</div>
+                  <div class="hospital-phone">{{ c.phone }}</div>
+                  <div style="font-size:11px; color:var(--muted);">
+                    {{ c.relation }} {% if c.is_user_saved %}<span style="color:#2ecc71; font-weight:700;">&bull; Saved in Profile</span>{% endif %}
+                  </div>
+                </div>
+                {% if c.phone and c.phone != 'Not provided' %}
+                <a href="tel:{{ c.phone }}" style="margin-left:auto; color:{% if c.type == 'emergency' %}var(--danger){% else %}var(--primary){% endif %}; font-size:18px;" title="Call {{ c.name }}">
+                  <i class="fas fa-phone-alt"></i>
+                </a>
+                {% endif %}
+              </div>
+              {% endfor %}
+            {% else %}
+              <div style="padding:15px; font-size:13px; color:var(--muted);">
+                No emergency contacts saved. Please configure in your profile.
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Alert log -->
+        <div class="card">
+          <div style="font-weight:700;margin-bottom:10px;font-size:14px;"><i class="fas fa-bell" style="color:var(--warning);margin-right:6px;"></i>Alert Log</div>
+          <div class="alert-log" id="alert-log">
+            <div class="alert-item"><span class="alert-time">--:--</span><span class="alert-msg">System initialized. Ready for emergency.</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Hospitals list -->
+    <div class="card fade-in" style="margin-bottom:24px;">
+      <div class="section-title"><i class="fas fa-hospital-alt"></i> Nearby Hospitals — Bengaluru</div>
+      <div id="hospitals-grid" class="grid-3"></div>
+    </div>
+
+    <!-- Ambulance fleet -->
+    <div class="card fade-in">
+      <div class="section-title"><i class="fas fa-ambulance"></i> Active Ambulance Fleet</div>
+      <div id="ambulance-list"></div>
+    </div>
+
+  </div>
+</main>
+
+<div class="pg-toast" id="pg-toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/static/pulseguard.js"></script>
+<script>
+// ── Constants ──────────────────────────────────────────────────────────────
+const USER_LAT = 12.9716, USER_LNG = 77.5946; // Bengaluru center
+
+const HOSPITALS = [
+  {name:"Manipal Hospital",      addr:"Old Airport Rd",    lat:12.9592,lng:77.6444,phone:"080-2502-4444",rating:4.5},
+  {name:"Fortis Hospital",       addr:"Bannerghatta Rd",   lat:12.8918,lng:77.5972,phone:"080-6621-4444",rating:4.4},
+  {name:"Narayana Health City",  addr:"Bommasandra",       lat:12.8980,lng:77.6101,phone:"080-7122-2200",rating:4.6},
+  {name:"Victoria Hospital",     addr:"K.R.Market, City",  lat:12.9719,lng:77.5741,phone:"080-2670-1150",rating:4.2},
+  {name:"St. John's Med. College",addr:"Koramangala",      lat:12.9315,lng:77.6182,phone:"080-2206-5000",rating:4.5},
+];
+
+let ambulances = [
+  {id:"AMB-001",zone:"North",    lat:12.9850,lng:77.5500,status:"Available",driver:"Ravi K.",eta:8},
+  {id:"AMB-002",zone:"East",     lat:12.9200,lng:77.6700,status:"Available",driver:"Suresh M.",eta:12},
+  {id:"AMB-003",zone:"South",    lat:12.8800,lng:77.5800,status:"En Route",driver:"Anand P.",eta:6},
+  {id:"AMB-004",zone:"West",     lat:12.9600,lng:77.5200,status:"Available",driver:"Kumar D.",eta:10},
+  {id:"AMB-005",zone:"Central",  lat:12.9400,lng:77.6100,status:"Available",driver:"Vijay R.",eta:4},
+];
+
+// ── Map Init ───────────────────────────────────────────────────────────────
+const map = L.map('emergency-map', {zoomControl:true}).setView([USER_LAT,USER_LNG],13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  maxZoom:19
+}).addTo(map);
+
+// User marker
+const userIcon = L.divIcon({
+  html:`<div style="width:18px;height:18px;border-radius:50%;background:#3498db;border:3px solid #fff;box-shadow:0 0 10px rgba(52,152,219,0.8);"></div>`,
+  iconSize:[18,18], iconAnchor:[9,9], className:''
+});
+const userMarker = L.marker([USER_LAT,USER_LNG],{icon:userIcon})
+  .addTo(map)
+  .bindPopup('<b style="color:#121212">📍 Your Location</b><br>Bengaluru, Karnataka');
+
+// Hospital markers
+const hospIcon = L.divIcon({
+  html:`<div style="width:28px;height:28px;border-radius:6px;background:#e74c3c;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4);font-size:14px;">🏥</div>`,
+  iconSize:[28,28], iconAnchor:[14,14], className:''
+});
+
+HOSPITALS.forEach(h=>{
+  L.marker([h.lat,h.lng],{icon:hospIcon})
+    .addTo(map)
+    .bindPopup(`<b style="color:#121212">${h.name}</b><br>${h.addr}<br>📞 ${h.phone}<br>⭐ ${h.rating}/5`);
+});
+
+// Ambulance markers
+const ambIcon = (status)=>L.divIcon({
+  html:`<div style="width:32px;height:32px;border-radius:50%;background:${status==='En Route'?'#f39c12':'#1db954'};display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,0.5);font-size:16px;animation:${status==='En Route'?'none':''}">🚑</div>`,
+  iconSize:[32,32], iconAnchor:[16,16], className:''
+});
+
+let ambMarkers = {};
+ambulances.forEach(a=>{
+  ambMarkers[a.id] = L.marker([a.lat,a.lng],{icon:ambIcon(a.status)})
+    .addTo(map)
+    .bindPopup(`<b style="color:#121212">${a.id}</b><br>Driver: ${a.driver}<br>Zone: ${a.zone}<br>Status: ${a.status}<br>ETA: ${a.eta} min`);
+});
+
+let routeLine = null;
+
+
+// ── Real Browser Geolocation ──────────────────────────────────────────────
+function acquireRealLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                USER_LAT = pos.coords.latitude;
+                USER_LNG = pos.coords.longitude;
+                userMarker.setLatLng([USER_LAT, USER_LNG]);
+                map.setView([USER_LAT, USER_LNG], 14);
+                
+                const coordStr = `${USER_LAT.toFixed(4)}°N, ${USER_LNG.toFixed(4)}°E`;
+                document.getElementById('user-coords').textContent = coordStr;
+                document.getElementById('user-location-display').textContent = 'Live GPS Position';
+                addAlertLog('📍 Real GPS location acquired: ' + coordStr);
+
+                // Reverse geocoding for city / suburb
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${USER_LAT}&lon=${USER_LNG}`)
+                    .then(r => r.json())
+                    .then(geo => {
+                        if (geo && geo.address) {
+                            const addr = geo.address;
+                            const locName = addr.suburb || addr.neighbourhood || addr.city || addr.town || addr.county || 'Your Area';
+                            const stateName = addr.state || '';
+                            document.getElementById('user-location-display').textContent = `${locName}${stateName ? ', ' + stateName : ''} (Live GPS)`;
+                            addAlertLog(`📍 Detected area: ${locName}`);
+                        }
+                    }).catch(()=>{});
+
+                // Reposition simulated fleet around user's real location for realistic demo
+                reseedFleetAroundUser(USER_LAT, USER_LNG);
+                updateNearestAmbulance();
+                initHospitals();
+            },
+            (err) => {
+                console.warn("Browser GPS permission denied or timed out. Using fallback coords.", err);
+                addAlertLog('⚠️ Browser GPS not available; using default coordinates.');
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+        );
+    }
+}
+
+function reseedFleetAroundUser(lat, lng) {
+    const offsets = [
+        { dLat: 0.012, dLng: -0.015, zone: "North-West" },
+        { dLat: -0.018, dLng: 0.010, zone: "South-East" },
+        { dLat: 0.008, dLng: 0.016, zone: "East" },
+        { dLat: -0.010, dLng: -0.012, zone: "South-West" },
+        { dLat: 0.005, dLng: 0.004, zone: "Central" }
+    ];
+    ambulances.forEach((a, idx) => {
+        if (offsets[idx]) {
+            a.lat = lat + offsets[idx].dLat;
+            a.lng = lng + offsets[idx].dLng;
+            if (ambMarkers[a.id]) {
+                ambMarkers[a.id].setLatLng([a.lat, a.lng]);
+            }
+        }
+    });
+}
+
+window.addEventListener('DOMContentLoaded', acquireRealLocation);
+
+// ── Animate ambulances ─────────────────────────────────────────────────────
+function animateAmbulances(){
+  ambulances.forEach(a=>{
+    a.lat += (Math.random()-0.5)*0.003;
+    a.lng += (Math.random()-0.5)*0.003;
+    ambMarkers[a.id].setLatLng([a.lat,a.lng]);
+    ambMarkers[a.id].setIcon(ambIcon(a.status));
+  });
+  updateNearestAmbulance();
+  renderAmbulanceList();
+}
+setInterval(animateAmbulances, 3000);
+
+// ── Calculate distance ─────────────────────────────────────────────────────
+function calcDist(lat1,lng1,lat2,lng2){
+  return Math.sqrt(Math.pow((lat1-lat2)*111,2)+Math.pow((lng1-lng2)*111,2));
+}
+
+function updateNearestAmbulance(){
+  let nearest=ambulances[0], minD=999;
+  ambulances.forEach(a=>{
+    const d=calcDist(USER_LAT,USER_LNG,a.lat,a.lng);
+    if(d<minD){minD=d;nearest=a;}
+  });
+  document.getElementById('eta-display').textContent=nearest.eta;
+
+  // Route line to nearest
+  if(routeLine) map.removeLayer(routeLine);
+  routeLine=L.polyline([[USER_LAT,USER_LNG],[nearest.lat,nearest.lng]],{
+    color:'#1db954',weight:3,dashArray:'8,6',opacity:0.8
+  }).addTo(map);
+}
+
+// ── Nearest hospital ───────────────────────────────────────────────────────
+function initHospitals(){
+  let nearest=HOSPITALS[0], minD=999;
+  HOSPITALS.forEach(h=>{
+    const d=calcDist(USER_LAT,USER_LNG,h.lat,h.lng);
+    if(d<minD){minD=d;nearest=h;}
+  });
+  document.getElementById('nearest-hosp-name').textContent=nearest.name;
+  document.getElementById('nearest-hosp-dist').textContent=minD.toFixed(1)+' km away';
+
+  const grid=document.getElementById('hospitals-grid');
+  grid.innerHTML=HOSPITALS.map(h=>{
+    const d=calcDist(USER_LAT,USER_LNG,h.lat,h.lng).toFixed(1);
+    return `<div class="hospital-card" onclick="map.flyTo([${h.lat},${h.lng}],16)">
+      <div class="hospital-icon"><i class="fas fa-hospital-alt"></i></div>
+      <div>
+        <div class="hospital-name">${h.name}</div>
+        <div class="hospital-phone">📞 ${h.phone}</div>
+        <div style="font-size:11px;color:var(--muted);">⭐ ${h.rating} · ${h.addr}</div>
+      </div>
+      <div class="hospital-dist">${d} km</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Render ambulance list ──────────────────────────────────────────────────
+function renderAmbulanceList(){
+  document.getElementById('ambulance-list').innerHTML=ambulances.map(a=>{
+    const d=calcDist(USER_LAT,USER_LNG,a.lat,a.lng).toFixed(1);
+    return `<div class="ambulance-card">
+      <div style="font-size:22px;">🚑</div>
+      <div style="flex:1;">
+        <div style="font-weight:700;font-size:14px;">${a.id} — ${a.zone} Zone</div>
+        <div style="font-size:12px;color:var(--muted);">Driver: ${a.driver} · ${d} km away</div>
+      </div>
+      <div>
+        <span class="amb-status ${a.status==='Available'?'amb-available':'amb-enroute'}">${a.status}</span>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;text-align:center;">${a.eta} min ETA</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Alert log ──────────────────────────────────────────────────────────────
+function addAlert(msg, type=''){
+  const log=document.getElementById('alert-log');
+  const t=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const item=document.createElement('div');
+  item.className='alert-item';
+  item.innerHTML=`<span class="alert-time">${t}</span><span class="alert-msg ${type}">${msg}</span>`;
+  log.insertBefore(item,log.firstChild);
+}
+
+// ── SOS ────────────────────────────────────────────────────────────────────
+let sosTriggered=false;
+async function triggerSOS(){
+  if(sosTriggered){showToast('SOS already active!','error');return;}
+  sosTriggered=true;
+  const btn=document.getElementById('sos-btn');
+  btn.classList.add('triggered');
+  btn.innerHTML='<i class="fas fa-spinner fa-spin"></i><span>SENDING…</span>';
+  document.getElementById('dispatch-status').innerHTML='<i class="fas fa-circle" style="color:var(--danger);font-size:8px;animation:pulse-sos 1s infinite;"></i> SOS Active';
+
+  addAlert('🚨 SOS initiated by user','warning');
+  addAlert('📍 Location acquired — sharing with contacts…','');
+  addAlert('📱 Dispatching SMS + voice calls to emergency contacts…','warning');
+
+  try{
+    const res=await fetch('/api/emergency/sos',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        user_name:'PulseGuard User',
+        location:'Bengaluru, Karnataka',
+        lat:USER_LAT, lng:USER_LNG
+      })
+    });
+    const d=await res.json();
+
+    // ── Per-contact SMS status ──────────────────────────────────────────
+    if(d.sms_results && d.sms_results.length){
+      d.sms_results.forEach(r=>{
+        if(r.status==='sent')
+          addAlert(`📩 SMS delivered → ${r.name}`,'success');
+        else
+          addAlert(`⚠️ SMS failed → ${r.name}: ${r.error||'unknown'}`, 'warning');
+      });
+    }
+
+    // ── Per-contact call status ─────────────────────────────────────────
+    if(d.call_results && d.call_results.length){
+      d.call_results.forEach(r=>{
+        if(r.status==='called')
+          addAlert(`📞 Voice call placed → ${r.name}`,'success');
+        else
+          addAlert(`⚠️ Call failed → ${r.name}: ${r.error||'unknown'}`, 'warning');
+      });
+    }
+
+    // ── Twilio not configured — show guidance ───────────────────────────
+    if(!d.twilio_active){
+      addAlert('ℹ️ Twilio not configured — set credentials in .env to enable real SMS/calls','');
+    }
+
+    addAlert(`🏥 Nearest: ${d.nearest_hospital.name} (${d.distance_km} km)`,'success');
+    addAlert(`🚑 Ambulance dispatched — ETA ${d.eta_minutes} min`,'success');
+    if(d.email_sent) addAlert('📧 Email alert sent to registered contact','success');
+
+    document.getElementById('eta-display').textContent=d.eta_minutes;
+    document.getElementById('nearest-hosp-name').textContent=d.nearest_hospital.name;
+
+    ambulances[0].status='En Route';
+    ambulances[0].eta=d.eta_minutes;
+    renderAmbulanceList();
+
+    btn.innerHTML='<i class="fas fa-check-circle"></i><span>ACTIVE</span>';
+    const smsOk=d.sms_results&&d.sms_results.some(r=>r.status==='sent');
+    const callOk=d.call_results&&d.call_results.some(r=>r.status==='called');
+    if(smsOk||callOk)
+      showToast('🚨 SOS sent! Family notified via SMS & call.','success');
+    else
+      showToast('🚨 SOS sent! Ambulance dispatched.','success');
+
+    // ── Countdown timer ─────────────────────────────────────────────────
+    let countdown=d.eta_minutes*60;
+    const cdEl=document.getElementById('sos-countdown');
+    cdEl.style.display='block';
+    const iv=setInterval(()=>{
+      countdown--;
+      const m=Math.floor(countdown/60), s=countdown%60;
+      cdEl.textContent=`⏱ Ambulance ETA: ${m}:${s.toString().padStart(2,'0')}`;
+      if(countdown<=0){clearInterval(iv);cdEl.textContent='✅ Ambulance arrived!';}
+    },1000);
+
+  }catch(e){
+    addAlert('❌ Network error — call 112 directly','error');
+    sosTriggered=false;
+    btn.classList.remove('triggered');
+    btn.innerHTML='<i class="fas fa-exclamation-triangle"></i><span>SOS</span>';
+  }
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+initHospitals();
+renderAmbulanceList();
+updateNearestAmbulance();
+
+// Try geolocation
+if(navigator.geolocation){
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const {latitude:lat,longitude:lng}=pos.coords;
+    userMarker.setLatLng([lat,lng]);
+    document.getElementById('user-location-display').textContent='GPS Located';
+    document.getElementById('user-coords').textContent=`${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E`;
+    addAlert('📍 GPS location acquired','success');
+  },()=>{
+    addAlert('📍 Using default Bengaluru location','');
+  });
+}
+
+setTimeout(()=>addAlert('🛰️ Tracking system online — 5 units active','success'),500);
+
+// Auto-trigger SOS if initiated via voice command or URL parameter
+window.addEventListener('DOMContentLoaded', () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('autotrigger') === '1' || urlParams.get('autotrigger') === 'true') {
+    setTimeout(() => {
+      if (!sosTriggered) {
+        triggerSOS();
+        if (typeof speakAssistant === 'function') {
+          speakAssistant("Emergency SOS activated automatically. Emergency dispatch initiated. Please stay calm and seated.");
+        }
+      }
+    }, 600);
+  }
+});
+</script>
+
+{% if current_user.is_authenticated %}
+<script src="/static/voice.js"></script>
+{% endif %}
+</body>
+
+</html>

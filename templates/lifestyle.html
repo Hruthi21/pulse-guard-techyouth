@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>PulseGuard AI — Lifestyle Tracker</title>
+  <meta name="description" content="Track your daily lifestyle habits including smoking, alcohol, activity, sleep, and stress for cardiovascular health."/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link rel="stylesheet" href="/static/pulseguard.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<aside class="pg-sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <i class="fas fa-heartbeat logo-icon"></i>
+    <span class="logo-text">PulseGuard AI</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="/" class="nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+    <a href="/dashboard" class="nav-item "><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+    <a href="/heartrate" class="nav-item "><i class="fas fa-heartbeat"></i><span>Heart Rate (PPG)</span></a>
+    <a href="/appointments" class="nav-item " style="color:#2ecc71;font-weight:600;"><i class="fas fa-video"></i><span>Doctor Video Call</span></a>
+    <a href="/doctor" class="nav-item " style="color:#3498db;font-weight:600;"><i class="fas fa-user-md"></i><span>Doctor Portal</span></a>
+    <a href="/reports" class="nav-item "><i class="fas fa-file-medical"></i><span>Reports & Family</span></a>
+    <a href="/chat" class="nav-item "><i class="fas fa-robot"></i><span>AI Assistant</span></a>
+    <a href="/lifestyle" class="nav-item active"><i class="fas fa-running"></i><span>Lifestyle</span></a>
+    <a href="/diet" class="nav-item "><i class="fas fa-apple-alt"></i><span>Diet Analysis</span></a>
+    <a href="/emergency" class="nav-item "><i class="fas fa-ambulance"></i><span>Emergency</span></a>
+    {% if current_user.is_authenticated %}
+    <a href="/logout" class="nav-item" style="color:#e74c3c; margin-top:14px;"><i class="fas fa-sign-out-alt"></i><span>Logout ({{ current_user.full_name.split()[0] }})</span></a>
+    {% else %}
+    <a href="/login" class="nav-item" style="color:#2ecc71; margin-top:14px;"><i class="fas fa-sign-in-alt"></i><span>Login</span></a>
+    <a href="/register" class="nav-item"><i class="fas fa-user-plus"></i><span>Register</span></a>
+    {% endif %}
+  </nav>
+  <a href="/emergency" class="sidebar-sos"><i class="fas fa-exclamation-triangle"></i><span>SOS Emergency</span></a>
+</aside>
+
+<main class="pg-main">
+  <header class="pg-header">
+    <div>
+      <h1>Lifestyle Monitor</h1>
+      <div class="header-sub">Track habits that affect your cardiovascular health</div>
+    </div>
+    <a href="/dashboard" style="color:var(--muted);text-decoration:none;font-size:13px;"><i class="fas fa-arrow-left"></i> Dashboard</a>     <a href="/heartrate" class="nav-item"><i class="fas fa-heartbeat"></i><span>Heart Rate</span></a>     <a href="/chat" class="nav-item"><i class="fas fa-robot"></i><span>AI Assistant</span></a>
+  </header>
+
+  <div class="pg-content">
+
+    <div class="grid-2 fade-in" style="margin-bottom:24px;">
+
+      <!-- Left: Input Form -->
+      <div class="card">
+        <div class="section-title"><i class="fas fa-clipboard-list"></i> Today's Lifestyle Log</div>
+
+        <div style="margin-bottom:18px;">
+          <label class="pg-label">Smoking Status</label>
+          <select id="ls-smoking" class="pg-select" onchange="updateLiveScore()">
+            <option value="0">No — I don't smoke</option>
+            <option value="1">Occasionally</option>
+            <option value="2">Regular smoker</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <label class="pg-label">Alcohol Consumption</label>
+          <select id="ls-alcohol" class="pg-select" onchange="updateLiveScore()">
+            <option value="0">No — I don't drink</option>
+            <option value="1">Occasionally</option>
+            <option value="2">Regular drinker</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <label class="pg-label">Physical Activity Level</label>
+          <select id="ls-activity" class="pg-select" onchange="updateLiveScore()">
+            <option value="0">Low (sedentary)</option>
+            <option value="1" selected>Medium (moderate exercise)</option>
+            <option value="2">High (daily intense exercise)</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <label class="pg-label">
+            Sleep Hours Last Night
+            <span class="tracker-val" id="sleep-val-display">7 hrs</span>
+          </label>
+          <input type="range" id="ls-sleep" class="pg-slider" min="3" max="12" value="7"
+                 oninput="document.getElementById('sleep-val-display').textContent=this.value+' hrs';updateLiveScore()"/>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px;">
+            <span>3h</span><span>7h (ideal)</span><span>12h</span>
+          </div>
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <label class="pg-label">
+            Stress Level (1-10)
+            <span class="tracker-val" id="stress-val-display">5</span>
+          </label>
+          <input type="range" id="ls-stress" class="pg-slider" min="1" max="10" value="5"
+                 oninput="document.getElementById('stress-val-display').textContent=this.value;updateStressBar();updateLiveScore()"/>
+          <div class="stress-bar-wrap"><div class="stress-bar" id="stress-bar" style="width:50%;background:var(--warning)"></div></div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label class="pg-label">
+            Work Meetings / Workload Today
+            <span class="tracker-val" id="meetings-val-display">4</span>
+          </label>
+          <input type="range" id="ls-meetings" class="pg-slider" min="0" max="15" value="4"
+                 oninput="document.getElementById('meetings-val-display').textContent=this.value;updateWeekStrip();updateLiveScore()"/>
+        </div>
+
+        <button class="pg-btn pg-btn-primary" onclick="saveLifestyle()" style="width:100%;">
+          <i class="fas fa-save"></i> Save Today's Log
+        </button>
+      </div>
+
+      <!-- Right: Score + Tips -->
+      <div style="display:flex;flex-direction:column;gap:20px;">
+
+        <!-- Score ring -->
+        <div class="card" style="text-align:center;">
+          <div class="card-title">Live Lifestyle Score</div>
+          <div class="ls-score-ring" style="margin:16px auto;">
+            <svg width="140" height="140" viewBox="0 0 140 140">
+              <circle cx="70" cy="70" r="56" fill="none" stroke="#1a1a2e" stroke-width="14"/>
+              <circle id="score-ring-circle" cx="70" cy="70" r="56" fill="none"
+                      stroke="#1db954" stroke-width="14"
+                      stroke-dasharray="351.86" stroke-dashoffset="175.93"
+                      stroke-linecap="round" style="transition:all 0.6s ease;"/>
+            </svg>
+            <div class="ring-text">
+              <div class="ring-num" id="ls-score-display">50</div>
+              <div class="ring-lbl">/ 100</div>
+            </div>
+          </div>
+          <div id="ls-score-badge" class="badge badge-medium" style="font-size:14px;padding:6px 20px;">MODERATE</div>
+          <p style="font-size:13px;color:var(--muted);margin-top:12px;" id="ls-score-tip">Log your habits to get an accurate lifestyle score.</p>
+        </div>
+
+        <!-- Lifestyle chart -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px;">Habit Breakdown</div>
+          <div class="chart-wrap"><canvas id="lifestyleRadar"></canvas></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Workload Week Strip -->
+    <div class="card fade-in" style="margin-bottom:24px;">
+      <div class="section-title"><i class="fas fa-calendar-week"></i> Weekly Workload Simulator</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Simulates your meeting load — high workload days are flagged. Adjust meetings slider to see impact.</p>
+      <div class="week-strip" id="week-strip"></div>
+      <p style="font-size:12px;color:var(--muted);margin-top:10px;">
+        <span style="color:var(--primary)">■</span> Light (&lt;3)
+        <span style="color:var(--warning);margin-left:12px;">■</span> Busy (3–7)
+        <span style="color:var(--danger);margin-left:12px;">■</span> Overload (8+)
+      </p>
+    </div>
+
+    <!-- Tips Grid -->
+    <div class="grid-3 fade-in">
+      <div class="card">
+        <div class="section-title" style="font-size:15px;"><i class="fas fa-moon"></i> Sleep Tips</div>
+        <ul class="rec-list">
+          <li><i class="fas fa-check-circle"></i>Aim for 7-9 hours nightly</li>
+          <li><i class="fas fa-check-circle"></i>Keep a consistent sleep schedule</li>
+          <li><i class="fas fa-check-circle"></i>Avoid screens 1 hr before bed</li>
+          <li><i class="fas fa-check-circle"></i>Keep room cool and dark</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="section-title" style="font-size:15px;"><i class="fas fa-dumbbell"></i> Activity Tips</div>
+        <ul class="rec-list">
+          <li><i class="fas fa-check-circle"></i>150 min/week moderate cardio</li>
+          <li><i class="fas fa-check-circle"></i>Take stairs instead of elevator</li>
+          <li><i class="fas fa-check-circle"></i>10 min walk after each meal</li>
+          <li><i class="fas fa-check-circle"></i>Strength training 2x/week</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="section-title" style="font-size:15px;"><i class="fas fa-brain"></i> Stress Tips</div>
+        <ul class="rec-list">
+          <li><i class="fas fa-check-circle"></i>5-min deep breathing daily</li>
+          <li><i class="fas fa-check-circle"></i>Take regular screen breaks</li>
+          <li><i class="fas fa-check-circle"></i>Practice mindful meditation</li>
+          <li><i class="fas fa-check-circle"></i>Limit caffeine after noon</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<div class="pg-toast" id="pg-toast"></div>
+
+<script src="/static/pulseguard.js"></script>
+<script>
+let radarChart;
+
+function initRadar(scores){
+  if(radarChart) radarChart.destroy();
+  radarChart = new Chart(document.getElementById('lifestyleRadar'),{
+    type:'radar',
+    data:{
+      labels:['Sleep','Activity','No Smoke','No Alcohol','Low Stress','Work-Life'],
+      datasets:[{
+        label:'Your Score',
+        data: scores,
+        backgroundColor:'rgba(29,185,84,0.15)',
+        borderColor:'#1db954',
+        borderWidth:2,
+        pointBackgroundColor:'#1db954',
+        pointRadius:4
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{r:{
+        min:0, max:10,
+        grid:{color:'#222'},
+        ticks:{display:false},
+        pointLabels:{color:'#888',font:{size:11}}
+      }},
+      plugins:{legend:{display:false}}
+    }
+  });
+}
+
+function updateStressBar(){
+  const val=parseInt(document.getElementById('ls-stress').value);
+  const pct=(val/10)*100;
+  const bar=document.getElementById('stress-bar');
+  bar.style.width=pct+'%';
+  bar.style.background=val<=3?'#1db954':val<=6?'#f39c12':'#e74c3c';
+}
+
+function updateWeekStrip(){
+  const today=parseInt(document.getElementById('ls-meetings').value);
+  const strip=document.getElementById('week-strip');
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  strip.innerHTML=days.map((d,i)=>{
+    const m=i===new Date().getDay()-1?today:Math.floor(Math.random()*10);
+    const cls=m<3?'light':m<8?'busy':'overload';
+    return `<div class="day-cell ${cls}"><div class="day-name">${d}</div><div class="day-meetings" style="color:${m<3?'var(--primary)':m<8?'var(--warning)':'var(--danger)'}">${m}</div><div style="font-size:10px;color:var(--muted)">mtgs</div></div>`;
+  }).join('');
+}
+
+function updateLiveScore(){
+  const smoking   = parseInt(document.getElementById('ls-smoking').value);
+  const alcohol   = parseInt(document.getElementById('ls-alcohol').value);
+  const activity  = parseInt(document.getElementById('ls-activity').value);
+  const sleep     = parseInt(document.getElementById('ls-sleep').value);
+  const stress    = parseInt(document.getElementById('ls-stress').value);
+  const meetings  = parseInt(document.getElementById('ls-meetings').value);
+
+  let score=100;
+  if(smoking===2)score-=20; else if(smoking===1)score-=10;
+  if(alcohol===2)score-=15; else if(alcohol===1)score-=7;
+  if(activity===0)score-=15; else if(activity===2)score+=5;
+  if(sleep<6)score-=10; else if(sleep>=7&&sleep<=9)score+=5;
+  if(stress>7)score-=15; else if(stress<=3)score+=5;
+  if(meetings>8)score-=10; else if(meetings<=3)score+=3;
+  score=Math.max(0,Math.min(100,score));
+
+  document.getElementById('ls-score-display').textContent=score;
+
+  // Ring
+  const circumference=351.86;
+  const offset=circumference-(score/100)*circumference;
+  const circle=document.getElementById('score-ring-circle');
+  circle.style.strokeDashoffset=offset;
+  circle.style.stroke=score>70?'#1db954':score>40?'#f39c12':'#e74c3c';
+
+  // Badge
+  const badge=document.getElementById('ls-score-badge');
+  const tip=document.getElementById('ls-score-tip');
+  if(score>70){
+    badge.className='badge badge-low'; badge.textContent='EXCELLENT';
+    tip.textContent='Great lifestyle habits! Keep it up for a healthy heart.';
+  } else if(score>40){
+    badge.className='badge badge-medium'; badge.textContent='MODERATE';
+    tip.textContent='Room for improvement. Focus on sleep and reducing stress.';
+  } else {
+    badge.className='badge badge-high'; badge.textContent='NEEDS ATTENTION';
+    tip.textContent='Several habits need improvement. Consider consulting a doctor.';
+  }
+
+  // Radar
+  const radarData=[
+    Math.min(10,sleep>=7&&sleep<=9?10:sleep),
+    activity===2?10:activity===1?6:3,
+    smoking===0?10:smoking===1?5:1,
+    alcohol===0?10:alcohol===1?6:2,
+    Math.max(1,10-stress),
+    meetings<=3?10:meetings<=7?6:2
+  ];
+  initRadar(radarData);
+}
+
+async function saveLifestyle(){
+  const payload={
+    smoking:   document.getElementById('ls-smoking').value,
+    alcohol:   document.getElementById('ls-alcohol').value,
+    activity:  document.getElementById('ls-activity').value,
+    sleep_hours: document.getElementById('ls-sleep').value,
+    stress:    document.getElementById('ls-stress').value,
+    meetings:  document.getElementById('ls-meetings').value,
+    user_id:   'default'
+  };
+  try{
+    const res=await fetch('/api/lifestyle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await res.json();
+    showToast('Lifestyle log saved! Score: '+d.lifestyle_score,'success');
+  }catch(e){ showToast('Save failed','error'); }
+}
+
+// Init
+updateLiveScore();
+updateStressBar();
+updateWeekStrip();
+</script>
+
+{% if current_user.is_authenticated %}
+<script src="/static/voice.js"></script>
+{% endif %}
+</body>
+
+</html>
