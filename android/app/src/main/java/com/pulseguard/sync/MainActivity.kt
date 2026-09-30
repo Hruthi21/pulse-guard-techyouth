@@ -63,11 +63,11 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // Permission launcher
+        // Permission launcher using Health Connect contract
         permLauncher = registerForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions()
+            androidx.health.connect.client.PermissionController.createRequestPermissionResultContract()
         ) { granted ->
-            val all = PERMISSIONS.all { granted[it] == true }
+            val all = PERMISSIONS.all { it in granted }
             tvStatus.text = if (all) "All permissions granted — ready to sync!"
                             else "Some permissions denied. Tap Allow again."
         }
