@@ -1,23 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  network_security_config.xml
-  Allows plain HTTP to local IP ranges (192.168.x.x, 10.x.x.x) and ngrok HTTPS.
-  Do NOT use cleartextTrafficPermitted="true" globally in production.
--->
 <network-security-config>
-    <domain-config cleartextTrafficPermitted="true">
-        <!-- LAN / Wi-Fi access to your PC -->
-        <domain includeSubdomains="true">192.168.0.0</domain>
-        <domain includeSubdomains="true">192.168.1.0</domain>
-        <domain includeSubdomains="true">10.0.0.0</domain>
-        <domain includeSubdomains="true">10.0.2.2</domain>   <!-- Android emulator localhost -->
-        <domain includeSubdomains="true">localhost</domain>
-        <domain includeSubdomains="true">127.0.0.1</domain>
-    </domain-config>
-    <!-- ngrok and all HTTPS destinations use default (secure) config -->
-    <base-config cleartextTrafficPermitted="false">
+    <!-- Allow plain HTTP traffic to any local IP / LAN for sync -->
+    <base-config cleartextTrafficPermitted="true">
         <trust-anchors>
             <certificates src="system" />
+            <certificates src="user" />
         </trust-anchors>
     </base-config>
 </network-security-config>

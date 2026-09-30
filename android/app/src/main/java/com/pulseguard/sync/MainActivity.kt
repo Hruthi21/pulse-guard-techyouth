@@ -92,9 +92,8 @@ class MainActivity : AppCompatActivity() {
             prefs.edit().putString("server_url", url).putString("pairing_code", code).apply()
             tvStatus.text = "Pairing with $url..."
             lifecycleScope.launch {
-                val ok = Uploader.pair(url, code, android.os.Build.MODEL)
-                tvStatus.text = if (ok) "Paired successfully with PulseGuard server!"
-                                else "Pairing failed — check URL and code."
+                val res = Uploader.pair(url, code, android.os.Build.MODEL)
+                tvStatus.text = res.message
             }
         }
 

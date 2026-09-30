@@ -8,10 +8,12 @@ import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
 
+data class ApiResult(val ok: Boolean, val message: String)
+
 object Uploader {
 
     /** Pair the app with the server using the pairing code from /connect-phone. */
-    suspend fun pair(serverUrl: String, pairingCode: String, deviceName: String): Boolean =
+    suspend fun pair(serverUrl: String, pairingCode: String, deviceName: String): ApiResult =
         withContext(Dispatchers.IO) {
             try {
                 val payload = JSONObject().apply {
@@ -19,9 +21,13 @@ object Uploader {
                     put("device_name",  deviceName)
                 }
                 val code = post("$serverUrl/api/phone/pair", payload, pairingCode)
-                code == 200
+                if (code in 200..299) {
+                    ApiResult(true, "Paired successfully with PulseGuard server!")
+                } else {
+                    ApiResult(false, "Server returned HTTP $code (Check Pairing Code).")
+                }
             } catch (e: Exception) {
-                false
+                ApiResult(false, "Connection error: ${e.localizedMessage ?: e.message}")
             }
         }
 
