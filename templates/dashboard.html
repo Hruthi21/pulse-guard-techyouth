@@ -25,6 +25,7 @@
     <a href="/dashboard" class="nav-item active"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
     <a href="/heartrate" class="nav-item "><i class="fas fa-heartbeat"></i><span>Heart Rate (PPG)</span></a>
     <a href="/wearable" class="nav-item " style="color:#46f0a0;font-weight:600;"><i class="fas fa-cube"></i><span>PulseGuard Wear (3D)</span></a>
+    <a href="/connect-phone" class="nav-item" style="color:#00d2d3;font-weight:600;"><i class="fas fa-mobile-alt"></i><span>Connect Phone</span></a>
     <a href="/appointments" class="nav-item " style="color:#2ecc71;font-weight:600;"><i class="fas fa-video"></i><span>Doctor Video Call</span></a>
     <a href="/doctor" class="nav-item " style="color:#3498db;font-weight:600;"><i class="fas fa-user-md"></i><span>Doctor Portal</span></a>
     <a href="/reports" class="nav-item "><i class="fas fa-file-medical"></i><span>Reports & Family</span></a>
@@ -112,18 +113,20 @@
               <i class="fas fa-ambulance"></i> SOS Call
             </a>
           </div>
+        </div>
+
         <!-- Phone Steps Card (Health Connect sync) -->
-        <div class="card" style="border-left: 4px solid #9b59b6; background: linear-gradient(135deg, rgba(155,89,182,0.12), rgba(255,255,255,0.02));">
-          <div style="font-size:11px; color:#9b59b6; text-transform:uppercase; font-weight:800; letter-spacing:1px; margin-bottom:4px;">Android Health Connect</div>
-          <h3 style="margin:0 0 6px; font-size:18px;"><i class="fas fa-shoe-prints" style="color:#9b59b6; margin-right:6px;"></i> Today's Steps</h3>
-          <div style="font-size:36px; font-weight:900; color:#9b59b6; margin:6px 0 4px;" id="db-steps">—</div>
+        <div class="card" style="border-left: 4px solid #00d2d3; background: linear-gradient(135deg, rgba(0,210,211,0.12), rgba(255,255,255,0.02));">
+          <div style="font-size:11px; color:#00d2d3; text-transform:uppercase; font-weight:800; letter-spacing:1px; margin-bottom:4px;">Android Health Connect</div>
+          <h3 style="margin:0 0 6px; font-size:18px;"><i class="fas fa-mobile-alt" style="color:#00d2d3; margin-right:6px;"></i> Live Phone Steps</h3>
+          <div style="font-size:36px; font-weight:900; color:#00d2d3; margin:6px 0 4px;" id="db-steps">—</div>
           <div style="height:6px;background:var(--darker);border-radius:3px;overflow:hidden;margin-bottom:10px;">
-            <div id="db-steps-bar" style="height:100%;border-radius:3px;background:#9b59b6;width:0%;transition:width 0.8s;"></div>
+            <div id="db-steps-bar" style="height:100%;border-radius:3px;background:#00d2d3;width:0%;transition:width 0.8s;"></div>
           </div>
           <div style="font-size:12px;color:var(--muted);margin-bottom:14px;" id="db-steps-meta">Connect your phone to see live steps.</div>
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <a href="/connect-phone" style="padding:8px 16px; font-size:13px; font-weight:700; text-decoration:none; border-radius:8px; background:#9b59b6; color:#fff; display:inline-flex; align-items:center; gap:6px;">
-              <i class="fas fa-mobile-alt"></i> Connect Phone
+            <a href="/connect-phone" style="padding:8px 16px; font-size:13px; font-weight:700; text-decoration:none; border-radius:8px; background:#00d2d3; color:#0f172a; display:inline-flex; align-items:center; gap:6px;">
+              <i class="fas fa-sync-alt"></i> Connect Phone
             </a>
           </div>
         </div>
@@ -447,14 +450,16 @@
         const res = await fetch('/api/steps/today');
         const d   = await res.json();
         if (d.steps !== null && d.steps !== undefined) {
-          document.getElementById('db-steps').textContent = d.steps.toLocaleString();
+          document.getElementById('db-steps').textContent = Number(d.steps).toLocaleString() + ' steps';
           const pct = Math.min(100, Math.round((d.steps / 8000) * 100));
           document.getElementById('db-steps-bar').style.width = pct + '%';
-          const calStr  = d.calories   ? ` · ${Math.round(d.calories)} kcal` : '';
-          const hrStr   = d.heart_rate ? ` · ${d.heart_rate} bpm` : '';
-          const syncStr = d.synced_at  ? ` · synced ${new Date(d.synced_at).toLocaleTimeString()}` : '';
+          const calStr  = d.calories   ? ` · 🔥 ${Math.round(d.calories)} kcal` : '';
+          const distStr = d.distance_m ? ` · 📍 ${(d.distance_m / 1000).toFixed(2)} km` : '';
+          const syncStr = d.synced_at  ? ` · 🟢 Live Synced` : '';
           document.getElementById('db-steps-meta').textContent =
-            `${pct}% of 8,000 goal${calStr}${hrStr}${syncStr}`;
+            `${pct}% of 8,000 goal${calStr}${distStr}${syncStr}`;
+        } else if (d.paired) {
+          document.getElementById('db-steps-meta').textContent = '🟢 Phone paired — waiting for today\'s step data.';
         }
       } catch (e) { /* silently ignore if phone not connected */ }
     }
